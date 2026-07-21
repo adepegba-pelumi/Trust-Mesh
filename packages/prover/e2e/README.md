@@ -23,6 +23,8 @@ cp e2e/.env.example e2e/.env
 
 ```bash
 uv run python e2e/run_agent_demo.py
+uv run python e2e/run_agent_demo.py --stream --scenario happy
+uv run python e2e/run_agent_demo.py --stream --scenario unsafe
 ```
 
 Outputs:
