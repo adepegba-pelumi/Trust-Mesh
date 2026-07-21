@@ -42,3 +42,16 @@ Foundry tests run against an in-process EVM (no fork required). All Stage 3 test
 ```bash
 cd packages/contracts && forge test -vvv
 ```
+
+## Stage 4 e2e (Python prover ↔ Sepolia verifier)
+
+After filling in contract addresses above:
+
+```bash
+cd packages/prover
+uv sync --extra e2e
+cp e2e/.env.example e2e/.env   # set TRUSTMESH_VERIFIER_ADDRESS + keys
+uv run python e2e/run_agent_demo.py
+```
+
+See `packages/prover/e2e/README.md` and `e2e/run_log.json` output.

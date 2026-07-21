@@ -78,6 +78,7 @@ desktop.ini
 .env
 .env.*
 !.env.example
+packages/prover/e2e/run_log.json
 *.pem
 *.key
 secrets/
