@@ -10,10 +10,13 @@ Usage::
     uv sync --extra e2e
     cp e2e/.env.example e2e/.env   # fill in RPC URL, key, verifier address
     uv run python e2e/run_agent_demo.py
+    uv run python e2e/run_agent_demo.py --stream --scenario happy
+    uv run python e2e/run_agent_demo.py --stream --scenario unsafe
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -51,6 +54,13 @@ from portfolio_model import (  # noqa: E402
 RUN_LOG_PATH = E2E_DIR / "run_log.json"
 WEI = 10**18
 
+_STREAM_MODE = False
+
+
+def _emit(event: dict[str, Any]) -> None:
+    if _STREAM_MODE:
+        print(json.dumps(event), flush=True)
+
 
 def _require_env(name: str) -> str:
     value = os.environ.get(name, "").strip()
@@ -76,35 +86,66 @@ def _send_tx(
     tx_builder: Any,
     *,
     label: str,
+    gas: int | None = None,
 ) -> dict[str, Any]:
     nonce = w3.eth.get_transaction_count(account.address)
     chain_id = w3.eth.chain_id
-    tx = tx_builder.build_transaction(
-        {
-            "from": account.address,
-            "nonce": nonce,
-            "chainId": chain_id,
-        }
-    )
-    if "gas" not in tx:
-        tx["gas"] = w3.eth.estimate_gas(tx)
-    tx["gasPrice"] = w3.eth.gas_price
+    tx_params: dict[str, Any] = {
+        "from": account.address,
+        "nonce": nonce,
+        "chainId": chain_id,
+    }
+    if gas is not None:
+        tx_params["gas"] = gas
+
+    tx = tx_builder.build_transaction(tx_params)
+    if gas is not None:
+        tx["gas"] = gas
+    elif "gas" not in tx:
+        try:
+            tx["gas"] = w3.eth.estimate_gas(tx)
+        except ContractLogicError:
+            tx["gas"] = 150_000
+
+    if "maxFeePerGas" not in tx:
+        priority = w3.eth.max_priority_fee
+        latest = w3.eth.get_block("latest")
+        base_fee = latest.get("baseFeePerGas", w3.eth.gas_price)
+        tx["maxPriorityFeePerGas"] = priority
+        tx["maxFeePerGas"] = base_fee * 2 + priority
+    tx.pop("gasPrice", None)
 
     signed = account.sign_transaction(tx)
     tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
     print(f"[{label}] submitted tx: {tx_hash.to_0x_hex()}")
+    _emit({"type": "tx_submitted", "label": label, "txHash": tx_hash.to_0x_hex()})
 
     start = time.perf_counter()
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)
     elapsed = time.perf_counter() - start
 
-    return {
+    result = {
         "tx_hash": tx_hash.to_0x_hex(),
         "block_number": receipt["blockNumber"],
         "gas_used": receipt["gasUsed"],
         "status": receipt["status"],
         "confirmation_seconds": round(elapsed, 3),
     }
+    _emit({"type": "tx_confirmed", "label": label, **result})
+    return result
+
+
+def _stage_start(stage: str) -> float:
+    _emit({"type": "stage", "stage": stage, "status": "start"})
+    return time.perf_counter()
+
+
+def _stage_complete(stage: str, started: float, **data: Any) -> None:
+    elapsed_ms = round((time.perf_counter() - started) * 1000, 1)
+    payload: dict[str, Any] = {"type": "stage", "stage": stage, "status": "complete", "elapsedMs": elapsed_ms}
+    if data:
+        payload["data"] = data
+    _emit(payload)
 
 
 def _ensure_target_registered(w3: Web3, contract: Contract, account: Account, target: str) -> None:
@@ -121,7 +162,7 @@ def _ensure_target_registered(w3: Web3, contract: Contract, account: Account, ta
             "or deploy with your key as owner."
         )
 
-    print(f"[setup] registering target {target} …")
+    print(f"[setup] registering target {target} ...")
     _send_tx(
         w3,
         account,
@@ -181,6 +222,13 @@ def run_happy_path(
     record["commitment_seconds"] = round(commit_seconds, 3)
     record["model_commitment"] = "0x" + model_commitment.hex()
     print(f"  model commitment: {record['model_commitment']} ({commit_seconds:.2f}s)")
+    _emit(
+        {
+            "type": "agent",
+            "modelCommitment": record["model_commitment"],
+            "commitmentSeconds": record["commitment_seconds"],
+        }
+    )
 
     reg = _send_tx(
         w3,
@@ -191,7 +239,16 @@ def run_happy_path(
     record["registration"] = reg
 
     print("\n=== Step 3–4: Observe market, run inference ===")
+    t0 = _stage_start("observing")
     market = observe_market(rng)
+    _stage_complete(
+        "observing",
+        t0,
+        poolLiquidityEth=market["pool_liquidity_eth"],
+        assetPrices=market["asset_prices"].tolist(),
+    )
+
+    t1 = _stage_start("inferring")
     logits = run_inference(weights, market["features"])
     concentration_bps = allocation_concentration_bps(logits)
     liquidity_wei = liquidity_to_wei(market["pool_liquidity_eth"])
@@ -210,14 +267,28 @@ def run_happy_path(
         "asset_prices": market["asset_prices"].tolist(),
     }
     print(f"  liquidity={liquidity_wei / WEI:.2f} ETH, concentration={concentration_bps} bps")
+    _stage_complete(
+        "inferring",
+        t1,
+        poolLiquidityWei=str(liquidity_wei),
+        concentrationBps=concentration_bps,
+    )
 
     print("\n=== Step 5: Generate proof (Stage 2 mock prover) ===")
+    t2 = _stage_start("proving")
     proof_start = time.perf_counter()
     bundle = build_proof_bundle(liquidity_wei, concentration_bps, target)
     record["proof_generation_seconds"] = round(time.perf_counter() - proof_start, 4)
     record["public_inputs"] = list(bundle.public_inputs)
+    _stage_complete(
+        "proving",
+        t2,
+        proofGenerationSeconds=record["proof_generation_seconds"],
+        publicInputs=record["public_inputs"],
+    )
 
     print("\n=== Step 6–7: verifyAndExecute + poll VerifiedDecision ===")
+    t3 = _stage_start("verifying")
     verify = _send_tx(
         w3,
         account,
@@ -229,9 +300,13 @@ def run_happy_path(
         ),
         label="verifyAndExecute (happy)",
     )
+    _stage_complete("verifying", t3, txHash=verify["tx_hash"], status=verify["status"])
+
+    t4 = _stage_start("executing")
     record["verify"] = verify
 
     if verify["status"] != 1:
+        _stage_complete("executing", t4, status=verify["status"], txHash=verify["tx_hash"])
         raise RuntimeError(f"Happy-path transaction reverted: {verify['tx_hash']}")
 
     receipt = w3.eth.get_transaction_receipt(verify["tx_hash"])
@@ -239,8 +314,16 @@ def run_happy_path(
     record["verified_decision"] = audit
     if audit:
         print(f"  VerifiedDecision @ block {audit['blockNumber']}: inputs={audit['publicInputs']}")
+        _stage_complete(
+            "executing",
+            t4,
+            status=verify["status"],
+            txHash=verify["tx_hash"],
+            verifiedDecision=audit,
+        )
     else:
         print("  WARNING: VerifiedDecision event not found in receipt logs")
+        _stage_complete("executing", t4, status=verify["status"], txHash=verify["tx_hash"])
 
     return record
 
@@ -254,16 +337,20 @@ def run_constraint_violation(
     print("\n=== Constraint violation: concentration cap exceeded ===")
     record: dict[str, Any] = {"scenario": "concentration_violation"}
 
+    t0 = _stage_start("observing")
     safety = contract.functions.safetyConfig().call()
     min_liq, max_bps = safety[0], safety[1]
     liquidity_wei = int(min_liq + 500 * WEI)
     violation_bps = int(max_bps + 1_500)
+    _stage_complete(
+        "observing",
+        t0,
+        minLiquidityWei=str(min_liq),
+        maxConcentrationBps=max_bps,
+    )
 
+    t1 = _stage_start("inferring")
     public_inputs = public_inputs_from_market(liquidity_wei, violation_bps)
-    proof_start = time.perf_counter()
-    proof = generate_proof(public_inputs)
-    payload = build_proof_bundle(liquidity_wei, violation_bps, target).transaction_payload
-    record["proof_generation_seconds"] = round(time.perf_counter() - proof_start, 4)
     record["public_inputs"] = public_inputs
     record["violation"] = {
         "type": "ConcentrationExceeded",
@@ -271,7 +358,27 @@ def run_constraint_violation(
         "max_allowed_bps": max_bps,
     }
     print(f"  attempting verify with concentration={violation_bps} bps (max={max_bps})")
+    _stage_complete(
+        "inferring",
+        t1,
+        concentrationBps=violation_bps,
+        maxAllowedBps=max_bps,
+        poolLiquidityWei=str(liquidity_wei),
+    )
 
+    t2 = _stage_start("proving")
+    proof_start = time.perf_counter()
+    proof = generate_proof(public_inputs)
+    payload = build_proof_bundle(liquidity_wei, violation_bps, target).transaction_payload
+    record["proof_generation_seconds"] = round(time.perf_counter() - proof_start, 4)
+    _stage_complete(
+        "proving",
+        t2,
+        proofGenerationSeconds=record["proof_generation_seconds"],
+        publicInputs=public_inputs,
+    )
+
+    t3 = _stage_start("verifying")
     try:
         contract.functions.verifyAndExecute(
             account.address,
@@ -284,7 +391,14 @@ def run_constraint_violation(
     except ContractLogicError as exc:
         record["simulation"] = {"reverted": True, "message": str(exc)}
         print(f"  eth_call reverted as expected: {exc}")
+    _stage_complete(
+        "verifying",
+        t3,
+        simulationReverted=record.get("simulation", {}).get("reverted", False),
+        violationType="ConcentrationExceeded",
+    )
 
+    t4 = _stage_start("executing")
     try:
         revert_tx = _send_tx(
             w3,
@@ -296,18 +410,50 @@ def run_constraint_violation(
                 payload,
             ),
             label="verifyAndExecute (violation)",
+            gas=150_000,
         )
         record["verify"] = revert_tx
         record["on_chain_revert"] = revert_tx["status"] == 0
+        _stage_complete(
+            "executing",
+            t4,
+            status=revert_tx["status"],
+            txHash=revert_tx["tx_hash"],
+            onChainRevert=revert_tx["status"] == 0,
+        )
     except Exception as exc:  # noqa: BLE001 — capture broadcast failures
         record["verify"] = {"error": str(exc)}
         record["on_chain_revert"] = True
         print(f"  broadcast failed/reverted: {exc}")
+        _stage_complete("executing", t4, error=str(exc), onChainRevert=True)
 
     return record
 
 
 def main() -> None:
+    global _STREAM_MODE
+
+    parser = argparse.ArgumentParser(description="TrustMesh Stage 4 Sepolia e2e demo")
+    parser.add_argument(
+        "--stream",
+        action="store_true",
+        help="Emit newline-delimited JSON events on stdout for dashboard SSE",
+    )
+    parser.add_argument(
+        "--scenario",
+        choices=("happy", "unsafe", "both"),
+        default="both",
+        help="Which scenario to run (default: both)",
+    )
+    parser.add_argument(
+        "--rng-seed",
+        type=int,
+        default=int(time.time()) % 1_000_000,
+        help="RNG seed for happy-path market observation",
+    )
+    args = parser.parse_args()
+    _STREAM_MODE = args.stream
+
     load_dotenv(E2E_DIR / ".env")
     load_dotenv()
 
@@ -323,6 +469,15 @@ def main() -> None:
     chain_id = w3.eth.chain_id
     print(f"Connected chain_id={chain_id} agent={account.address}")
     print(f"TrustMeshVerifier @ {verifier_address}")
+    _emit(
+        {
+            "type": "connected",
+            "chainId": chain_id,
+            "agent": account.address,
+            "verifier": Web3.to_checksum_address(verifier_address),
+            "scenario": args.scenario,
+        }
+    )
 
     _ensure_target_registered(w3, contract, account, target_address)
 
@@ -337,14 +492,23 @@ def main() -> None:
     }
 
     t0 = time.perf_counter()
-    log["scenarios"]["happy_path"] = run_happy_path(w3, contract, account, target_address)
-    log["scenarios"]["constraint_violation"] = run_constraint_violation(
-        w3, contract, account, target_address
-    )
-    log["total_seconds"] = round(time.perf_counter() - t0, 3)
+    try:
+        if args.scenario in ("happy", "both"):
+            log["scenarios"]["happy_path"] = run_happy_path(
+                w3, contract, account, target_address, rng_seed=args.rng_seed
+            )
+        if args.scenario in ("unsafe", "both"):
+            log["scenarios"]["constraint_violation"] = run_constraint_violation(
+                w3, contract, account, target_address
+            )
+    except Exception as exc:
+        _emit({"type": "error", "message": str(exc)})
+        raise
 
+    log["total_seconds"] = round(time.perf_counter() - t0, 3)
     RUN_LOG_PATH.write_text(json.dumps(log, indent=2), encoding="utf-8")
-    print(f"\nWrote audit log → {RUN_LOG_PATH}")
+    _emit({"type": "complete", "log": log})
+    print(f"\nWrote audit log -> {RUN_LOG_PATH}")
     print("Done.")
 
 

@@ -51,6 +51,10 @@ packages/contracts/cache/
 packages/contracts/out/
 packages/contracts/broadcast/
 packages/contracts/lib/
+/packages/demo-app/.env.local
+/packages/demo-app/.env
+/packages/contracts/.env
+
 
 # IDE
 .idea/
