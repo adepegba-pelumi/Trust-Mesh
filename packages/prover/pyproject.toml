@@ -9,6 +9,7 @@ authors = [{ name = "TrustMesh Contributors" }]
 dependencies = [
     "numpy>=1.26",
     "py-ecc>=7.0",
+    "requests>=2.31",
 ]
 
 [project.optional-dependencies]
