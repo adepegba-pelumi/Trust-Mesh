@@ -1,0 +1,130 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+import {IPlonkVerifier} from "./interfaces/IPlonkVerifier.sol";
+import {SafetyInterceptor} from "./SafetyInterceptor.sol";
+
+/// @title TrustMeshVerifier
+/// @notice Verifies PLONK proofs and enforces agent safety constraints before execution.
+/// @dev Production deployments wire in a Halo2-generated PLONK verifier via `IPlonkVerifier`.
+contract TrustMeshVerifier is Ownable {
+    IPlonkVerifier public immutable plonkVerifier;
+
+    SafetyInterceptor.Config public safetyConfig;
+    mapping(address => bytes32) public agentCommitments;
+    mapping(address => bool) public contractRegistry;
+    mapping(address => SafetyInterceptor.VelocityBucket) public agentVelocity;
+
+    event AgentRegistered(address indexed agent, bytes32 modelCommitment);
+    event ContractRegistered(address indexed target);
+    event ContractRemoved(address indexed target);
+    event SafetyConfigUpdated(
+        uint256 minLiquidity,
+        uint256 maxConcentrationBps,
+        uint256 maxTransactionsPerWindow,
+        uint256 velocityWindowSeconds
+    );
+    event VelocityReset(address indexed agent);
+    event VerifiedDecision(
+        address indexed agent, bytes32 modelCommitment, uint256[] publicInputs, uint256 timestamp
+    );
+
+    error AgentNotRegistered(address agent);
+    error InvalidProof();
+
+    constructor(address plonkVerifier_, address initialOwner) Ownable(initialOwner) {
+        require(plonkVerifier_ != address(0), "Zero verifier");
+        plonkVerifier = IPlonkVerifier(plonkVerifier_);
+
+        safetyConfig = SafetyInterceptor.Config({
+            minLiquidity: 1_000 ether,
+            maxConcentrationBps: 5_000,
+            maxTransactionsPerWindow: 10,
+            velocityWindowSeconds: 3600
+        });
+    }
+
+    /// @notice Register the calling agent with a model commitment hash.
+    function registerAgent(bytes32 modelCommitment) external {
+        require(modelCommitment != bytes32(0), "Zero commitment");
+        agentCommitments[msg.sender] = modelCommitment;
+        emit AgentRegistered(msg.sender, modelCommitment);
+    }
+
+    /// @notice Verify a PLONK proof, enforce safety constraints, and emit a verified decision.
+    /// @param agent Registered agent address.
+    /// @param proof PLONK proof bytes from the prover.
+    /// @param publicInputs Circuit public inputs (liquidity, concentration bps, …).
+    /// @param transactionPayload ABI-encoded `(address target, uint256 value, bytes data)`.
+    function verifyAndExecute(
+        address agent,
+        bytes calldata proof,
+        uint256[] calldata publicInputs,
+        bytes calldata transactionPayload
+    ) external returns (bool) {
+        bytes32 modelCommitment = agentCommitments[agent];
+        if (modelCommitment == bytes32(0)) {
+            revert AgentNotRegistered(agent);
+        }
+
+        if (!plonkVerifier.verifyProof(publicInputs, proof)) {
+            revert InvalidProof();
+        }
+
+        SafetyInterceptor.enforceAll(
+            publicInputs,
+            transactionPayload,
+            safetyConfig,
+            contractRegistry,
+            agentVelocity,
+            agent
+        );
+
+        emit VerifiedDecision(agent, modelCommitment, publicInputs, block.timestamp);
+        return true;
+    }
+
+    /// @notice Update safety thresholds (owner only).
+    function setSafetyConfig(
+        uint256 minLiquidity,
+        uint256 maxConcentrationBps,
+        uint256 maxTransactionsPerWindow,
+        uint256 velocityWindowSeconds
+    ) external onlyOwner {
+        require(maxConcentrationBps <= SafetyInterceptor.MAX_BPS, "Invalid bps");
+        require(maxTransactionsPerWindow > 0, "Zero velocity limit");
+        require(velocityWindowSeconds > 0, "Zero velocity window");
+
+        safetyConfig = SafetyInterceptor.Config({
+            minLiquidity: minLiquidity,
+            maxConcentrationBps: maxConcentrationBps,
+            maxTransactionsPerWindow: maxTransactionsPerWindow,
+            velocityWindowSeconds: velocityWindowSeconds
+        });
+
+        emit SafetyConfigUpdated(
+            minLiquidity, maxConcentrationBps, maxTransactionsPerWindow, velocityWindowSeconds
+        );
+    }
+
+    /// @notice Add a target contract to the allowlist (owner only).
+    function addToRegistry(address target) external onlyOwner {
+        require(target != address(0), "Zero target");
+        contractRegistry[target] = true;
+        emit ContractRegistered(target);
+    }
+
+    /// @notice Remove a target contract from the allowlist (owner only).
+    function removeFromRegistry(address target) external onlyOwner {
+        contractRegistry[target] = false;
+        emit ContractRemoved(target);
+    }
+
+    /// @notice Reset an agent's velocity bucket (owner only).
+    function resetVelocity(address agent) external onlyOwner {
+        SafetyInterceptor.resetVelocityBucket(agentVelocity, agent);
+        emit VelocityReset(agent);
+    }
+}
