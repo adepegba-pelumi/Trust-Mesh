@@ -9,12 +9,14 @@ from typing import Any
 import pytest
 from langchain_core.tools import BaseTool
 
+from trustmesh_prover.prover.halo2_cli import load_fixture_artifacts
+
 from trustmesh_langchain import TrustMeshVerificationTool, __version__
 from trustmesh_langchain.schemas import DeFiActionInput, TrustMeshVerificationResult
 from trustmesh_langchain.verifier import TransactionReceipt
 
 AGENT = "0x8aff698EBd8d18B3A5dd2bDFb6E2A2196e489994"
-MODEL_COMMITMENT = bytes.fromhex("ab" * 32)
+MODEL_COMMITMENT = bytes.fromhex("07" * 32)
 TARGET = "0x4d871E1Dd2193769b4634a27582be18A2962b38c"
 
 
@@ -84,14 +86,17 @@ def test_tool_args_schema_exposes_defi_fields(tool: TrustMeshVerificationTool) -
     assert "post_trade_concentration_bps" in props
 
 
-def test_successful_verification_returns_structured_json(tool: TrustMeshVerificationTool) -> None:
+def test_successful_verification_returns_structured_json(
+    tool: TrustMeshVerificationTool, require_halo2_fixtures: None
+) -> None:
+    fixture = load_fixture_artifacts()
     raw = tool.run(
         {
             "target_contract": TARGET,
             "action_type": "swap",
             "amount_wei": 10**17,
-            "pool_liquidity_wei": 2_000 * 10**18,
-            "post_trade_concentration_bps": 2_500,
+            "pool_liquidity_wei": int(fixture.public_inputs[0]),
+            "post_trade_concentration_bps": int(fixture.public_inputs[1]),
         }
     )
     payload = json.loads(raw)
@@ -101,23 +106,28 @@ def test_successful_verification_returns_structured_json(tool: TrustMeshVerifica
     assert result.reverted is False
     assert result.transaction_hash == MockVerifierClient.tx_hash
     assert result.model_commitment == "0x" + MODEL_COMMITMENT.hex()
-    assert result.public_inputs == [2_000 * 10**18, 2_500]
+    assert len(result.public_inputs) == 3
+    assert result.public_inputs[0] == int(fixture.public_inputs[0])
+    assert result.public_inputs[1] == int(fixture.public_inputs[1])
     assert result.action_type == "swap"
     assert result.proof_generation_seconds is not None
     assert result.error_message is None
 
 
-def test_invoke_structured_helper(tool: TrustMeshVerificationTool) -> None:
+def test_invoke_structured_helper(tool: TrustMeshVerificationTool, require_halo2_fixtures: None) -> None:
+    fixture = load_fixture_artifacts()
     action = DeFiActionInput(
         target_contract=TARGET,
         action_type="supply",
         amount_wei=0,
-        pool_liquidity_wei=10**21,
-        post_trade_concentration_bps=1_000,
+        pool_liquidity_wei=int(fixture.public_inputs[0]),
+        post_trade_concentration_bps=int(fixture.public_inputs[1]),
     )
     result = tool.invoke_structured(action)
     assert result.success is True
-    assert result.public_inputs == [10**21, 1_000]
+    assert len(result.public_inputs) == 3
+    assert result.public_inputs[0] == int(fixture.public_inputs[0])
+    assert result.public_inputs[1] == int(fixture.public_inputs[1])
 
 
 def test_unregistered_agent_returns_error_without_chain_call() -> None:
@@ -173,7 +183,8 @@ def test_execute_exception_is_captured() -> None:
     assert "gas estimation failed" in (result.error_message or "")
 
 
-def test_verify_and_execute_receives_proof_artifacts(tool: TrustMeshVerificationTool) -> None:
+def test_verify_and_execute_receives_proof_artifacts(require_halo2_fixtures: None) -> None:
+    fixture = load_fixture_artifacts()
     captured: dict[str, Any] = {}
 
     class CaptureClient(MockVerifierClient):
@@ -187,13 +198,15 @@ def test_verify_and_execute_receives_proof_artifacts(tool: TrustMeshVerification
             "target_contract": TARGET,
             "action_type": "swap",
             "amount_wei": 42,
-            "pool_liquidity_wei": 10**21,
-            "post_trade_concentration_bps": 3_000,
+            "pool_liquidity_wei": int(fixture.public_inputs[0]),
+            "post_trade_concentration_bps": int(fixture.public_inputs[1]),
             "calldata": "0xdeadbeef",
         }
     )
 
     assert isinstance(captured["proof"], bytes)
     assert len(captured["proof"]) > 0
-    assert captured["public_inputs"] == [10**21, 3_000]
+    assert len(captured["public_inputs"]) == 3
+    assert captured["public_inputs"][0] == int(fixture.public_inputs[0])
+    assert captured["public_inputs"][1] == int(fixture.public_inputs[1])
     assert isinstance(captured["transaction_payload"], bytes)

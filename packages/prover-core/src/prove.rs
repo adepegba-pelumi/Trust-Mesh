@@ -1,12 +1,12 @@
 use std::time::Instant;
 
 use anyhow::{Context, Result};
-use halo2_proofs::{
-    plonk::{create_proof, verify_proof, SingleVerifier},
-    transcript::{Blake2bRead, Blake2bWrite, Challenge255},
-};
-use halo2curves::bn256::{Bn256, Fr, G1Affine};
+use halo2_proofs::plonk::{create_proof, verify_proof, SingleVerifier};
+use halo2_solidity_verifier::Keccak256Transcript;
+use halo2curves::bn256::Fr;
 use rand::rngs::OsRng;
+use rand::SeedableRng;
+use rand_chacha::ChaCha20Rng;
 
 use crate::circuit::TrustMeshCircuit;
 use crate::field::{fr_to_u128_string, u128_to_fr};
@@ -20,13 +20,13 @@ pub fn prove(material: &KeyMaterial, witness: WitnessInput) -> Result<ProofArtif
     let instances = public_instances(&built.input);
 
     let start = Instant::now();
-    let mut transcript = Blake2bWrite::<_, G1Affine, Challenge255<_>>::init(vec![]);
+    let mut transcript = Keccak256Transcript::new(Vec::new());
     create_proof(
         &material.params,
         &material.pk,
         &[circuit],
         &[&[&instances[..]]],
-        OsRng,
+        proof_rng(),
         &mut transcript,
     )
     .context("create proof")?;
@@ -52,7 +52,7 @@ pub fn verify_local(
 ) -> Result<VerifyReport> {
     let instances = public_instances(witness);
     let strategy = SingleVerifier::new(&material.params);
-    let mut transcript = Blake2bRead::<_, G1Affine, Challenge255<_>>::init(proof);
+    let mut transcript = Keccak256Transcript::new(proof);
     let start = Instant::now();
     verify_proof(
         &material.params,
@@ -90,4 +90,15 @@ fn public_instances(witness: &WitnessInput) -> Vec<Fr> {
         Fr::from(witness.post_trade_concentration_bps),
         commitment_field(witness),
     ]
+}
+
+fn proof_rng() -> ChaCha20Rng {
+    let seed = std::env::var("TRUSTMESH_PROOF_SEED")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .unwrap_or_else(|| {
+            let mut os = OsRng;
+            rand::RngCore::next_u64(&mut os)
+        });
+    ChaCha20Rng::seed_from_u64(seed)
 }

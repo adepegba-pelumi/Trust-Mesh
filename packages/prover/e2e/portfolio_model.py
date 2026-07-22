@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import numpy as np
 
-# Small enough for fast KZG commitment in e2e; topology mirrors a 3-layer MLP.
-INPUT_DIM = 8
-HIDDEN_DIM = 32
+# Must match packages/prover-core/src/circuit.rs (Stage 6.75 Halo2 circuit).
+INPUT_DIM = 4
+HIDDEN_DIM = 8
 OUTPUT_DIM = 4  # four-asset allocation logits
 
 

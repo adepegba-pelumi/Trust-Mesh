@@ -14,8 +14,29 @@ pub struct WitnessInput {
     pub features: Vec<i64>,
     #[serde(with = "serde_bytes")]
     pub model_commitment: [u8; 32],
+    #[serde(with = "serde_u128_string")]
     pub pool_liquidity_wei: u128,
     pub post_trade_concentration_bps: u64,
+}
+
+mod serde_u128_string {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub fn serialize<S: Serializer>(value: &u128, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&value.to_string())
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<u128, D::Error> {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        match value {
+            serde_json::Value::String(text) => text.parse().map_err(serde::de::Error::custom),
+            serde_json::Value::Number(number) => number
+                .as_u64()
+                .map(u128::from)
+                .ok_or_else(|| serde::de::Error::custom("invalid u128 number")),
+            _ => Err(serde::de::Error::custom("expected string or number for u128")),
+        }
+    }
 }
 
 mod serde_bytes {
