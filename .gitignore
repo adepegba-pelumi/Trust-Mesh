@@ -93,3 +93,11 @@ secrets/
 *.temp
 coverage/
 .nyc_output/
+
+# Generated ZK artifacts (produced by scripts/build_zk_artifacts.sh)
+packages/prover-core/keys/
+packages/contracts/src/generated/Halo2Verifier.sol
+packages/contracts/test/fixtures/*.json
+!packages/contracts/test/fixtures/.gitkeep
+packages/prover/tests/fixtures/*.json
+!packages/prover/tests/fixtures/.gitkeep

@@ -1,6 +1,7 @@
 "use client";
 
 import type { PipelineStageId, PipelineState, StageTiming } from "@/types/demo";
+import { outlineButton, sectionLabel } from "@/components/PageShell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,10 +71,10 @@ export function PipelineVisual({
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 space-y-0">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Live pipeline
-          </p>
-          <CardTitle className="mt-2 text-xl">Observe → Infer → Prove → Verify → Execute</CardTitle>
+          <p className={sectionLabel}>live pipeline</p>
+          <CardTitle className="mt-2 text-xl text-zinc-100">
+            Observe → Infer → Prove → Verify → Execute
+          </CardTitle>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button disabled={isRunning} onClick={onRunDemo} type="button">
@@ -82,62 +83,69 @@ export function PipelineVisual({
           <Button disabled={isRunning} onClick={onRunUnsafe} type="button" variant="destructive">
             Trigger unsafe transaction
           </Button>
-          <Button disabled={isRunning} onClick={onReset} type="button" variant="outline">
+          <Button
+            className={outlineButton}
+            disabled={isRunning}
+            onClick={onReset}
+            type="button"
+            variant="outline"
+          >
             Reset
           </Button>
         </div>
       </CardHeader>
 
       <CardContent>
-      <ol className="grid gap-4 md:grid-cols-5">
-        {stageOrder.map((stage) => {
-          const active = isStageActive(stage, pipelineState);
-          const complete = isStageComplete(stage, pipelineState, stageOrder, stageTimings);
-          const timing = stageTimings[stage];
+        <ol className="grid gap-3 md:grid-cols-5">
+          {stageOrder.map((stage) => {
+            const active = isStageActive(stage, pipelineState);
+            const complete = isStageComplete(stage, pipelineState, stageOrder, stageTimings);
+            const timing = stageTimings[stage];
 
-          return (
-            <li
-              key={stage}
-              className={cn(
-                "relative rounded-xl border p-4 transition",
-                active && "border-primary/50 bg-primary/5 shadow-md",
-                !active && complete && "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30",
-                !active && !complete && "border-border bg-muted/50",
-              )}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold">{STAGE_LABELS[stage]}</span>
-                <span
-                  className={cn(
-                    "h-2.5 w-2.5 rounded-full",
-                    active && "animate-pulse bg-primary",
-                    !active && complete && "bg-emerald-500",
-                    !active && !complete && "bg-muted-foreground/30",
-                  )}
-                />
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                {STAGE_DESCRIPTIONS[stage]}
-              </p>
-              <p className="mt-3 font-mono text-xs text-muted-foreground">
-                {timing ? `${timing.elapsedMs.toLocaleString()} ms` : active ? "Running…" : "—"}
-              </p>
-            </li>
-          );
-        })}
-      </ol>
+            return (
+              <li
+                key={stage}
+                className={cn(
+                  "relative rounded-xl border p-4 transition-all",
+                  active &&
+                    "border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_20px_-8px_rgba(52,211,153,0.4)]",
+                  !active && complete && "border-emerald-500/20 bg-emerald-500/5",
+                  !active && !complete && "border-zinc-800 bg-zinc-950/60",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-zinc-100">{STAGE_LABELS[stage]}</span>
+                  <span
+                    className={cn(
+                      "h-2.5 w-2.5 rounded-full",
+                      active && "animate-pulse bg-emerald-400",
+                      !active && complete && "bg-emerald-500",
+                      !active && !complete && "bg-zinc-700",
+                    )}
+                  />
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                  {STAGE_DESCRIPTIONS[stage]}
+                </p>
+                <p className="mt-3 font-mono text-xs text-zinc-400">
+                  {timing ? `${timing.elapsedMs.toLocaleString()} ms` : active ? "Running…" : "—"}
+                </p>
+              </li>
+            );
+          })}
+        </ol>
 
-      {error ? (
-        <Alert className="mt-4" variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : null}
+        {error ? (
+          <Alert className="mt-4" variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
 
-      {pipelineState === "done" ? (
-        <p className="mt-4 text-sm text-primary">
-          Pipeline complete — results recorded on Sepolia and in the audit trail below.
-        </p>
-      ) : null}
+        {pipelineState === "done" ? (
+          <p className="mt-4 text-sm text-emerald-400">
+            Pipeline complete — results recorded on Sepolia and in the audit trail below.
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );

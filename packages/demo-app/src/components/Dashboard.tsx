@@ -3,6 +3,7 @@
 import { AppNav } from "@/components/AppNav";
 import { AgentStatusCard } from "@/components/AgentStatusCard";
 import { AuditTrail } from "@/components/AuditTrail";
+import { PageShell, pageSubtitle, pageTitle, sectionLabel } from "@/components/PageShell";
 import { PipelineVisual } from "@/components/PipelineVisual";
 import {
   useAgentEvents,
@@ -16,10 +17,18 @@ export function Dashboard() {
   const { rows, lastDecision, isLoading } = useAgentEvents(runner.demoAuditRows);
 
   return (
-    <div className="min-h-screen bg-background">
+    <PageShell>
       <AppNav />
 
-      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
+      <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-12">
+        <div>
+          <p className={sectionLabel}>dashboard</p>
+          <h1 className={pageTitle}>Live demo</h1>
+          <p className={pageSubtitle}>
+            Run the Sepolia agent pipeline, watch stage timings, and inspect VerifiedDecision events.
+          </p>
+        </div>
+
         <AgentStatusCard
           agentAddress={agentAddress}
           isRunning={runner.isRunning}
@@ -40,6 +49,6 @@ export function Dashboard() {
 
         <AuditTrail isLoading={isLoading} rows={rows} />
       </main>
-    </div>
+    </PageShell>
   );
 }

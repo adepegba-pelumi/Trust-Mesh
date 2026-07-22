@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 
+import { demoApiBlockedResponse, sanitizeProcessOutput } from "@/lib/demo-api";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,11 @@ function resolvePython(): string {
 }
 
 export async function GET(request: Request) {
+  const blocked = demoApiBlockedResponse(request);
+  if (blocked) {
+    return blocked;
+  }
+
   const { searchParams } = new URL(request.url);
   const unsafe = searchParams.get("unsafe") === "true";
   const scenario = unsafe ? "unsafe" : "happy";
@@ -67,7 +74,7 @@ export async function GET(request: Request) {
       });
 
       child.stderr.on("data", (data: Buffer) => {
-        pushSse({ type: "stderr", message: data.toString("utf8") });
+        pushSse({ type: "stderr", message: sanitizeProcessOutput(data.toString("utf8")) });
       });
 
       child.on("close", (code) => {

@@ -109,6 +109,11 @@ def build_proof_bundle(
     registered_commitment: bytes | None = None,
 ) -> ProofBundle:
     """Assemble Halo2 proof artifacts and the transaction payload."""
+    _validate_market_inputs_against_witness(
+        pool_liquidity_wei,
+        post_trade_concentration_bps,
+        witness,
+    )
     if registered_commitment is not None:
         verify_witness_kzg_commitment(witness, registered_commitment)
 
@@ -122,6 +127,26 @@ def build_proof_bundle(
         proof=artifacts.proof,
         transaction_payload=payload,
     )
+
+
+def _validate_market_inputs_against_witness(
+    pool_liquidity_wei: int,
+    post_trade_concentration_bps: int,
+    witness: dict[str, Any],
+) -> None:
+    expected_liquidity, expected_concentration, _ = public_inputs_from_witness(witness)
+    if int(pool_liquidity_wei) != expected_liquidity:
+        msg = (
+            "pool_liquidity_wei does not match witness: "
+            f"expected {expected_liquidity}, got {pool_liquidity_wei}"
+        )
+        raise PublicInputMismatch(msg)
+    if int(post_trade_concentration_bps) != expected_concentration:
+        msg = (
+            "post_trade_concentration_bps does not match witness: "
+            f"expected {expected_concentration}, got {post_trade_concentration_bps}"
+        )
+        raise PublicInputMismatch(msg)
 
 
 def _prove_artifacts(

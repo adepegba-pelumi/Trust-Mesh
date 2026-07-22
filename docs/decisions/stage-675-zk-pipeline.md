@@ -32,10 +32,11 @@ Replace mock PLONK (`proof.py` + `MockPlonkVerifier.sol`) with:
 
 ```bash
 # Linux CI / dev (requires Rust stable + linker)
+bash scripts/build_zk_artifacts.sh
+# Or manually:
 cd packages/prover-core
 cargo build --release
-./target/release/trustmesh-prove setup-keys --output keys
-# Generate Solidity verifier (CI script scripts/build_zk_artifacts.sh)
+./target/release/trustmesh-prove setup --output keys
 ```
 
 Windows dev hosts need MSVC Build Tools for Rust native deps.

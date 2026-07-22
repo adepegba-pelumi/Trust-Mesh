@@ -39,8 +39,8 @@ def test_public_inputs_from_market_rejects_invalid_bps() -> None:
 def test_build_proof_bundle_uses_halo2_fixtures_without_binary(require_halo2_fixtures: None) -> None:
     witness = load_fixture_witness()
     bundle = build_proof_bundle(
-        2_000 * 10**18,
-        2_500,
+        int(witness["pool_liquidity_wei"]),
+        int(witness["post_trade_concentration_bps"]),
         TARGET,
         witness=witness,
         registered_commitment=FIXTURE_COMMITMENT,

@@ -13,6 +13,7 @@ from trustmesh_prover.prover.halo2_cli import (
     MissingProverBinary,
     MissingProvingKey,
     ProverError,
+    PublicInputMismatch,
     fixtures_allowed,
     load_fixture_artifacts,
     load_fixture_witness,
@@ -71,8 +72,8 @@ def test_missing_prover_binary_fails_loudly(
     ):
         with pytest.raises(MissingProverBinary, match="trustmesh-prove binary not found"):
             build_proof_bundle(
-                2_000 * 10**18,
-                2_500,
+                int(witness["pool_liquidity_wei"]),
+                int(witness["post_trade_concentration_bps"]),
                 TARGET,
                 witness=witness,
                 registered_commitment=FIXTURE_COMMITMENT,
@@ -93,12 +94,23 @@ def test_missing_proving_key_fails_loudly(
     ):
         with pytest.raises(MissingProvingKey, match="proving keys missing"):
             build_proof_bundle(
-                2_000 * 10**18,
-                2_500,
+                int(witness["pool_liquidity_wei"]),
+                int(witness["post_trade_concentration_bps"]),
                 TARGET,
                 witness=witness,
                 registered_commitment=FIXTURE_COMMITMENT,
             )
+
+
+def test_build_proof_bundle_rejects_market_mismatch(require_halo2_fixtures: None) -> None:
+    witness = load_fixture_witness()
+    with pytest.raises(PublicInputMismatch, match="pool_liquidity_wei"):
+        build_proof_bundle(
+            10**18,
+            int(witness["post_trade_concentration_bps"]),
+            TARGET,
+            witness=witness,
+        )
 
 
 def test_invalid_witness_rejected_before_proving(require_halo2_fixtures: None) -> None:
@@ -106,7 +118,7 @@ def test_invalid_witness_rejected_before_proving(require_halo2_fixtures: None) -
     witness["post_trade_concentration_bps"] = 9_999
     with pytest.raises(ValueError, match="does not match inference"):
         build_proof_bundle(
-            2_000 * 10**18,
+            int(witness["pool_liquidity_wei"]),
             9_999,
             TARGET,
             witness=witness,
