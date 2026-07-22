@@ -71,6 +71,44 @@ jobs:
       - name: Gas report
         run: forge test --gas-report
 
+  prover-core:
+    name: Halo2 prover-core
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/prover-core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/prover-core
+
+      - name: cargo check
+        run: cargo check --all-targets
+
+      - name: cargo test
+        run: cargo test
+
+      - name: Release benchmark
+        run: |
+          cargo build --release
+          ./target/release/trustmesh-prove setup --output /tmp/trustmesh-keys --json
+          ./target/release/trustmesh-prove benchmark \
+            --witness fixtures/sample_witness.json \
+            --keys /tmp/trustmesh-keys \
+            --json | tee /tmp/benchmark.json
+
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prover-core-benchmark
+          path: /tmp/benchmark.json
+
   demo-app:
     name: Next.js
     runs-on: ubuntu-latest
