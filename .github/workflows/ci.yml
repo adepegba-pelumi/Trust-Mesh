@@ -2,18 +2,47 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  zk-artifacts:
+    name: ZK artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/prover-core
+
+      - name: Build ZK artifacts
+        run: bash scripts/build_zk_artifacts.sh
+
+      - name: Upload ZK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zk-artifacts
+          if-no-files-found: error
+          path: |
+            packages/prover-core/keys/
+            packages/contracts/src/generated/
+            packages/contracts/test/fixtures/
+            packages/prover/tests/fixtures/
+
   python:
     name: Python (${{ matrix.package }})
     runs-on: ubuntu-latest
+    needs: zk-artifacts
     strategy:
       fail-fast: false
       matrix:
@@ -24,11 +53,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Build ZK artifacts
-        run: bash scripts/build_zk_artifacts.sh
+      - name: Download ZK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: zk-artifacts
+          path: .
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -55,7 +84,7 @@ jobs:
   contracts:
     name: Foundry
     runs-on: ubuntu-latest
-    needs: []
+    needs: zk-artifacts
     defaults:
       run:
         working-directory: packages/contracts
@@ -64,11 +93,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Build ZK artifacts
-        run: bash scripts/build_zk_artifacts.sh
+      - name: Download ZK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: zk-artifacts
+          path: .
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1

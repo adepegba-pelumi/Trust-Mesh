@@ -8,10 +8,11 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
-import { sepolia } from "wagmi/chains";
+import { sepolia } from "viem/chains";
 
 import { trustMeshVerifierAbi, trustMeshVerifierAddress } from "@/config/contracts";
 import { sepoliaExplorerTx } from "@/config/web3";
+import { fieldLabel, linkAccent, outlineButton } from "@/components/PageShell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -145,10 +146,10 @@ export function AgentManagement() {
 
   if (!isConnected) {
     return (
-      <Card className="border-dashed">
+      <Card className="border-dashed border-zinc-700">
         <CardHeader className="text-center">
-          <CardTitle>Connect a wallet</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-zinc-100">Connect a wallet</CardTitle>
+          <CardDescription className="text-zinc-400">
             Use the Connect Wallet button in the header to register an agent on Sepolia.
           </CardDescription>
         </CardHeader>
@@ -170,31 +171,31 @@ export function AgentManagement() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Agent status</CardTitle>
+          <CardTitle className="text-zinc-100">Agent status</CardTitle>
         </CardHeader>
         <CardContent>
         <dl className="grid gap-4 sm:grid-cols-2">
           <div>
-            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Connected wallet</dt>
-            <dd className="mt-1 font-mono text-sm">{address}</dd>
+            <dt className={fieldLabel}>Connected wallet</dt>
+            <dd className="mt-1 font-mono text-sm text-zinc-300">{address}</dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Registration</dt>
+            <dt className={fieldLabel}>Registration</dt>
             <dd className="mt-1 text-sm">
               {isRegistered ? (
                 <Badge variant="success">Registered</Badge>
               ) : (
-                <span className="text-muted-foreground">Not registered</span>
+                <span className="text-zinc-500">Not registered</span>
               )}
             </dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Network</dt>
-            <dd className="mt-1 text-sm">Sepolia</dd>
+            <dt className={fieldLabel}>Network</dt>
+            <dd className="mt-1 text-sm text-zinc-300">Sepolia</dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Verifier</dt>
-            <dd className="mt-1 font-mono text-sm">{truncateHash(trustMeshVerifierAddress)}</dd>
+            <dt className={fieldLabel}>Verifier</dt>
+            <dd className="mt-1 font-mono text-sm text-zinc-300">{truncateHash(trustMeshVerifierAddress)}</dd>
           </div>
         </dl>
         </CardContent>
@@ -202,8 +203,8 @@ export function AgentManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Register agent</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-zinc-100">Register agent</CardTitle>
+          <CardDescription className="text-zinc-400">
             Generate a KZG model commitment via the prover, or paste an existing commitment hex.
           </CardDescription>
         </CardHeader>
@@ -215,17 +216,17 @@ export function AgentManagement() {
         </div>
 
         {modelCommitment ? (
-          <p className="mt-3 font-mono text-xs text-muted-foreground">
+          <p className="mt-3 font-mono text-xs text-zinc-500">
             Generated: {formatModelCommitment(modelCommitment)}
           </p>
         ) : null}
         {commitmentField ? (
-          <p className="mt-2 font-mono text-xs text-muted-foreground">
+          <p className="mt-2 font-mono text-xs text-zinc-500">
             Commitment field: {commitmentField}
           </p>
         ) : null}
 
-        <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <label className={"mt-4 block " + fieldLabel}>
           Commitment (0x…)
           <Input
             className="mt-2 font-mono"
@@ -260,10 +261,10 @@ export function AgentManagement() {
         </Button>
 
         {txHash ? (
-          <p className="mt-3 text-sm">
+          <p className="mt-3 text-sm text-zinc-300">
             Transaction:{" "}
             <a
-              className="font-mono text-primary hover:underline"
+              className={linkAccent}
               href={sepoliaExplorerTx(txHash)}
               rel="noreferrer"
               target="_blank"
@@ -279,38 +280,36 @@ export function AgentManagement() {
       {isRegistered ? (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-            <CardTitle>Registered agent details</CardTitle>
-            <Button onClick={() => void copyCommitment()} size="sm" type="button" variant="outline">
+            <CardTitle className="text-zinc-100">Registered agent details</CardTitle>
+            <Button className={outlineButton} onClick={() => void copyCommitment()} size="sm" type="button" variant="outline">
               {copied ? "Copied" : "Copy commitment"}
             </Button>
           </CardHeader>
           <CardContent>
           <dl className="grid gap-4">
             <div>
-              <dt className="text-xs uppercase tracking-wide text-muted-foreground">Model commitment</dt>
-              <dd className="mt-1 font-mono text-sm">
+              <dt className={fieldLabel}>Model commitment</dt>
+              <dd className="mt-1 font-mono text-sm text-zinc-300">
                 {formatModelCommitment(normalizeCommitment(onChainCommitment!))}
               </dd>
             </div>
             {registrationEvent ? (
               <>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Registered at</dt>
-                  <dd className="mt-1 text-sm">{formatTimestamp(registrationEvent.timestamp)}</dd>
+                  <dt className={fieldLabel}>Registered at</dt>
+                  <dd className="mt-1 text-sm text-zinc-300">{formatTimestamp(registrationEvent.timestamp)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Block</dt>
-                  <dd className="mt-1 font-mono text-sm">
+                  <dt className={fieldLabel}>Block</dt>
+                  <dd className="mt-1 font-mono text-sm text-zinc-300">
                     {registrationEvent.blockNumber.toString()}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Registration tx
-                  </dt>
+                  <dt className={fieldLabel}>Registration tx</dt>
                   <dd className="mt-1">
                     <a
-                      className="font-mono text-sm text-primary hover:underline"
+                      className={linkAccent}
                       href={sepoliaExplorerTx(registrationEvent.transactionHash)}
                       rel="noreferrer"
                       target="_blank"

@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 
+import { demoApiBlockedResponse, sanitizeProcessOutput } from "@/lib/demo-api";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,12 @@ function resolvePython(): string {
   return process.env.DEMO_PYTHON ?? (process.platform === "win32" ? "python" : "python3");
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const blocked = demoApiBlockedResponse(request);
+  if (blocked) {
+    return blocked;
+  }
+
   const proverDir = resolveProverDir();
   const scriptPath = path.join(proverDir, "e2e", "generate_commitment.py");
   const python = resolvePython();
@@ -44,7 +51,7 @@ export async function GET() {
       if (code !== 0) {
         resolve(
           Response.json(
-            { error: stderr.trim() || "Commitment generation failed" },
+            { error: sanitizeProcessOutput(stderr.trim() || "Commitment generation failed") },
             { status: 500 },
           ),
         );
@@ -56,7 +63,10 @@ export async function GET() {
         resolve(Response.json(payload));
       } catch {
         resolve(
-          Response.json({ error: "Invalid prover output", raw: stdout.trim() }, { status: 500 }),
+          Response.json(
+            { error: "Invalid prover output" },
+            { status: 500 },
+          ),
         );
       }
     });

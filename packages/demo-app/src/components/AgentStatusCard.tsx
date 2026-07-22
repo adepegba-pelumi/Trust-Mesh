@@ -1,6 +1,7 @@
 "use client";
 
 import { sepoliaExplorerAddress } from "@/config/web3";
+import { fieldLabel, linkAccent, sectionLabel, statBox } from "@/components/PageShell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatModelCommitment, formatTimestamp, normalizeCommitment } from "@/lib/format";
@@ -23,12 +24,10 @@ export function AgentStatusCard({
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 space-y-0">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Agent status
-          </p>
-          <CardTitle className="mt-2 text-2xl">TrustMesh Sepolia Agent</CardTitle>
+          <p className={sectionLabel}>agent status</p>
+          <CardTitle className="mt-2 text-xl text-zinc-100">TrustMesh Sepolia Agent</CardTitle>
           <a
-            className="mt-1 inline-block font-mono text-sm text-primary hover:underline"
+            className={"mt-1 inline-block text-sm " + linkAccent}
             href={sepoliaExplorerAddress(agentAddress)}
             rel="noreferrer"
             target="_blank"
@@ -43,17 +42,17 @@ export function AgentStatusCard({
 
       <CardContent>
         <dl className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-lg bg-muted p-4">
-            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Model commitment</dt>
-            <dd className="mt-2 font-mono text-sm">
+          <div className={statBox}>
+            <dt className={fieldLabel}>Model commitment</dt>
+            <dd className="mt-2 font-mono text-sm text-zinc-300">
               {modelCommitment
                 ? formatModelCommitment(normalizeCommitment(modelCommitment))
                 : "Not registered yet"}
             </dd>
           </div>
-          <div className="rounded-lg bg-muted p-4">
-            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Last decision</dt>
-            <dd className="mt-2 text-sm">
+          <div className={statBox}>
+            <dt className={fieldLabel}>Last decision</dt>
+            <dd className="mt-2 text-sm text-zinc-300">
               {lastDecision ? formatTimestamp(lastDecision.timestamp) : "No verified decisions yet"}
             </dd>
           </div>

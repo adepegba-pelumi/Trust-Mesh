@@ -16,18 +16,25 @@ Solidity smart contracts for on-chain PLONK proof verification and agent safety 
 
 ## Public input layout
 
-Must match the Stage 2 circuit:
+Must match the Halo2 circuit (Stage 6.8):
 
 | Index | Field |
 |-------|-------|
 | `0` | Pool liquidity (`uint256`) |
 | `1` | Post-transaction single-asset concentration (basis points, 0–10000) |
+| `2` | Model commitment field element (KZG digest + weight hash) |
 
 `transactionPayload` is ABI-encoded `(address target, uint256 value, bytes data)`.
 
+**Note:** Only `target` is enforced on-chain via registry checks. `value` and `calldata` are not ZK-bound in v1.0.0-rc.
+
 ## Setup
 
+From repository root, generate ZK artifacts first (required — `src/generated/Halo2Verifier.sol` is not committed):
+
 ```bash
+bash scripts/build_zk_artifacts.sh
+cd packages/contracts
 forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts --no-commit
 forge test -vvv
 forge test --gas-report

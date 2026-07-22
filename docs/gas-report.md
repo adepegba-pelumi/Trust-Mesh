@@ -1,6 +1,6 @@
 # Gas report (Stage 6.8)
 
-Figures from Foundry tests with the **generated Halo2 PLONK verifier** and committed proof fixtures (`scripts/build_zk_artifacts.sh`).
+Figures from Foundry tests with the **generated Halo2 PLONK verifier** and **CI-generated** proof fixtures (`scripts/build_zk_artifacts.sh`).
 
 | Contract / function | Approx. gas | Notes |
 |---------------------|------------|-------|

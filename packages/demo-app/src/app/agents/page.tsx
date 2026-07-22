@@ -1,22 +1,30 @@
 import { AgentManagement } from "@/components/AgentManagement";
 import { AppNav } from "@/components/AppNav";
+import {
+  PageShell,
+  linkAccent,
+  pageSubtitle,
+  pageTitle,
+  sectionLabel,
+} from "@/components/PageShell";
 import { trustMeshVerifierAddress } from "@/config/contracts";
-import { sepoliaExplorerAddress } from "@/config/web3";
+import { sepoliaExplorerAddress } from "@/config/network";
 
 export default function AgentsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <PageShell>
       <AppNav />
-      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
+      <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-12">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Agent management</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className={sectionLabel}>agents</p>
+            <h1 className={pageTitle}>Agent management</h1>
+            <p className={pageSubtitle}>
               Register agents on Sepolia without running Python scripts.
             </p>
           </div>
           <a
-            className="font-mono text-xs text-primary hover:underline"
+            className={linkAccent}
             href={sepoliaExplorerAddress(trustMeshVerifierAddress)}
             rel="noreferrer"
             target="_blank"
@@ -26,6 +34,6 @@ export default function AgentsPage() {
         </div>
         <AgentManagement />
       </main>
-    </div>
+    </PageShell>
   );
 }

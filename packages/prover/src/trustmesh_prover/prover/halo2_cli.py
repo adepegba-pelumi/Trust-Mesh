@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -82,9 +83,14 @@ def resolve_prover_binary() -> Path:
     candidates = [
         REPO_ROOT / "packages" / "prover-core" / "target" / "release" / "trustmesh-prove",
         REPO_ROOT / "packages" / "prover-core" / "target" / "release" / "trustmesh-prove.exe",
-        REPO_ROOT / "packages" / "prover-core" / "target" / "debug" / "trustmesh-prove",
-        REPO_ROOT / "packages" / "prover-core" / "target" / "debug" / "trustmesh-prove.exe",
     ]
+    if fixtures_allowed():
+        candidates.extend(
+            [
+                REPO_ROOT / "packages" / "prover-core" / "target" / "debug" / "trustmesh-prove",
+                REPO_ROOT / "packages" / "prover-core" / "target" / "debug" / "trustmesh-prove.exe",
+            ],
+        )
     for candidate in candidates:
         if candidate.is_file():
             return candidate
@@ -129,8 +135,19 @@ def run_prove(
     temp_witness = witness_path
     cleanup = False
     if temp_witness is None:
-        temp_witness = Path(os.environ.get("TRUSTMESH_WITNESS_TMP", "/tmp/trustmesh_witness.json"))
-        cleanup = True
+        env_tmp = os.environ.get("TRUSTMESH_WITNESS_TMP", "").strip()
+        if env_tmp:
+            temp_witness = Path(env_tmp)
+        else:
+            handle = tempfile.NamedTemporaryFile(
+                mode="w",
+                suffix=".json",
+                prefix="trustmesh_witness_",
+                delete=False,
+            )
+            handle.close()
+            temp_witness = Path(handle.name)
+            cleanup = True
 
     write_witness_json(witness, temp_witness)
 
@@ -190,8 +207,29 @@ def _run_verify(
     witness: dict[str, Any],
     proof: bytes,
 ) -> None:
-    witness_path = Path(os.environ.get("TRUSTMESH_VERIFY_WITNESS_TMP", "/tmp/trustmesh_verify_witness.json"))
-    proof_path = Path(os.environ.get("TRUSTMESH_VERIFY_PROOF_TMP", "/tmp/trustmesh_proof.bin"))
+    witness_handle = tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".json",
+        prefix="trustmesh_verify_witness_",
+        delete=False,
+    )
+    witness_handle.close()
+    witness_path = Path(witness_handle.name)
+
+    proof_handle = tempfile.NamedTemporaryFile(
+        suffix=".bin",
+        prefix="trustmesh_proof_",
+        delete=False,
+    )
+    proof_handle.close()
+    proof_path = Path(proof_handle.name)
+
+    env_witness = os.environ.get("TRUSTMESH_VERIFY_WITNESS_TMP", "").strip()
+    env_proof = os.environ.get("TRUSTMESH_VERIFY_PROOF_TMP", "").strip()
+    if env_witness:
+        witness_path = Path(env_witness)
+    if env_proof:
+        proof_path = Path(env_proof)
     witness_path.write_text(json.dumps(witness, indent=2), encoding="utf-8")
     proof_path.write_bytes(proof)
     try:

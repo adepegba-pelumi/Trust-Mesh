@@ -12,6 +12,8 @@ from langchain_core.tools import BaseTool
 
 from trustmesh_prover.prover.halo2_cli import load_fixture_artifacts
 
+from trustmesh_prover.prover.proof import ProofBundle
+
 from trustmesh_langchain import TrustMeshVerificationTool, __version__
 from trustmesh_langchain.schemas import DeFiActionInput, TrustMeshVerificationResult
 from trustmesh_langchain.verifier import TransactionReceipt
@@ -66,6 +68,25 @@ class MockVerifierClient:
 @pytest.fixture
 def tool() -> TrustMeshVerificationTool:
     return TrustMeshVerificationTool(verifier_client=MockVerifierClient())
+
+
+@pytest.fixture
+def mock_proof_bundle(monkeypatch: pytest.MonkeyPatch) -> ProofBundle:
+    """Bypass Halo2 proving for on-chain client unit tests."""
+    bundle = ProofBundle(
+        public_inputs=(2_000 * 10**18, 2_500, 123_456),
+        proof=b"\xab" * 64,
+        transaction_payload=b"\x00",
+    )
+    monkeypatch.setattr(
+        "trustmesh_langchain.tool._load_production_witness",
+        lambda: {"model_commitment": "0x" + "07" * 32},
+    )
+    monkeypatch.setattr(
+        "trustmesh_langchain.tool.build_proof_bundle",
+        lambda *args, **kwargs: bundle,
+    )
+    return bundle
 
 
 def test_version_is_defined() -> None:
@@ -149,7 +170,7 @@ def test_unregistered_agent_returns_error_without_chain_call() -> None:
     assert "not registered" in (result.error_message or "")
 
 
-def test_reverted_transaction_surfaces_failure() -> None:
+def test_reverted_transaction_surfaces_failure(mock_proof_bundle: None) -> None:
     client = MockVerifierClient(receipt_status=0)
     tool = TrustMeshVerificationTool(verifier_client=client)
     raw = tool.run(
@@ -167,7 +188,7 @@ def test_reverted_transaction_surfaces_failure() -> None:
     assert result.error_message == "verifyAndExecute transaction reverted"
 
 
-def test_execute_exception_is_captured() -> None:
+def test_execute_exception_is_captured(mock_proof_bundle: None) -> None:
     client = MockVerifierClient(raise_on_execute=RuntimeError("gas estimation failed"))
     tool = TrustMeshVerificationTool(verifier_client=client)
     raw = tool.run(

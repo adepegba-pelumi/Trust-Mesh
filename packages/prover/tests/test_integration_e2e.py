@@ -116,8 +116,8 @@ def test_failure_path_unregistered_agent(require_halo2_fixtures: None) -> None:
     chain = MockChain(commitments={}, commitment_fields={}, receipts=[])
     witness = load_fixture_witness()
     bundle = build_proof_bundle(
-        2_000 * 10**18,
-        2_500,
+        int(witness["pool_liquidity_wei"]),
+        int(witness["post_trade_concentration_bps"]),
         TARGET,
         witness=witness,
         registered_commitment=FIXTURE_COMMITMENT,
