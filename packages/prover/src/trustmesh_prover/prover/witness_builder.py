@@ -15,6 +15,10 @@ OUTPUT_DIM = 4
 FIXED_POINT_SCALE = 256
 
 
+class KzgCommitmentMismatch(ValueError):
+    """Raised when witness weights do not recomputed to the registered KZG digest."""
+
+
 def _quantize_to_i64(weights: dict[str, np.ndarray], bits: int = 8) -> dict[str, list[int]]:
     model = quantize_model(weights, bits=bits)
     out: dict[str, list[int]] = {}
@@ -29,6 +33,38 @@ def commitment_digest(weights: dict[str, np.ndarray]) -> bytes:
     model = quantize_model(weights, bits=8)
     poly = encode_as_polynomial(model)
     return kzg_commit(poly, srs).digest
+
+
+def weights_from_witness(witness: dict[str, Any]) -> dict[str, np.ndarray]:
+    return {
+        "fc1.weight": np.array(witness["fc1_weight"], dtype=np.int64).reshape(HIDDEN_DIM, INPUT_DIM),
+        "fc1.bias": np.array(witness["fc1_bias"], dtype=np.int64),
+        "fc2.weight": np.array(witness["fc2_weight"], dtype=np.int64).reshape(HIDDEN_DIM, HIDDEN_DIM),
+        "fc2.bias": np.array(witness["fc2_bias"], dtype=np.int64),
+        "fc3.weight": np.array(witness["fc3_weight"], dtype=np.int64).reshape(OUTPUT_DIM, HIDDEN_DIM),
+        "fc3.bias": np.array(witness["fc3_bias"], dtype=np.int64),
+    }
+
+
+def verify_witness_kzg_commitment(witness: dict[str, Any], registered_commitment: bytes) -> None:
+    """Verify Stage 1 KZG commitment matches quantized witness weights and registered digest."""
+    commitment_hex = witness.get("model_commitment", "")
+    if isinstance(commitment_hex, str):
+        witness_commitment = bytes.fromhex(commitment_hex.removeprefix("0x"))
+    else:
+        witness_commitment = bytes(commitment_hex)
+
+    if witness_commitment != registered_commitment:
+        msg = "witness model commitment bytes do not match registered KZG digest"
+        raise KzgCommitmentMismatch(msg)
+
+    recomputed = commitment_digest(weights_from_witness(witness))
+    if recomputed != registered_commitment:
+        msg = (
+            "witness weights do not recomputed to registered KZG commitment: "
+            f"expected {registered_commitment.hex()}, got {recomputed.hex()}"
+        )
+        raise KzgCommitmentMismatch(msg)
 
 
 def compute_native_forward(witness: dict[str, Any]) -> dict[str, list[int]]:
@@ -102,53 +138,8 @@ def build_witness_payload(
             f"does not match inference {derived_bps}"
         )
         raise ValueError(msg)
+    verify_witness_kzg_commitment(payload, model_commitment)
     return payload
-
-
-def build_demo_witness(
-    *,
-    model_commitment: bytes,
-    pool_liquidity_wei: int,
-    post_trade_concentration_bps: int | None = None,
-    rng_seed: int = 42,
-) -> dict[str, Any]:
-    """Build a deterministic demo witness aligned with the e2e portfolio model."""
-    rng = np.random.default_rng(rng_seed)
-    weights = _demo_weights(rng)
-    features = np.array([3, -2, 1, 0], dtype=np.int64)
-    return build_witness_payload(
-        weights=weights,
-        features=features,
-        model_commitment=model_commitment,
-        pool_liquidity_wei=pool_liquidity_wei,
-        post_trade_concentration_bps=post_trade_concentration_bps,
-    )
-
-
-def validate_witness_against_commitment(
-    witness: dict[str, Any],
-    registered_commitment: bytes,
-) -> None:
-    commitment_hex = witness.get("model_commitment", "")
-    if isinstance(commitment_hex, str):
-        raw = bytes.fromhex(commitment_hex.removeprefix("0x"))
-    else:
-        raw = bytes(commitment_hex)
-    if raw != registered_commitment:
-        msg = "witness model commitment does not match registered KZG digest"
-        raise ValueError(msg)
-
-
-def _demo_weights(rng: np.random.Generator) -> dict[str, np.ndarray]:
-    scale = 0.05
-    return {
-        "fc1.weight": (rng.standard_normal((HIDDEN_DIM, INPUT_DIM)).astype(np.float32) * scale),
-        "fc1.bias": (rng.standard_normal(HIDDEN_DIM).astype(np.float32) * scale * 0.1),
-        "fc2.weight": (rng.standard_normal((HIDDEN_DIM, HIDDEN_DIM)).astype(np.float32) * scale),
-        "fc2.bias": (rng.standard_normal(HIDDEN_DIM).astype(np.float32) * scale * 0.1),
-        "fc3.weight": (rng.standard_normal((OUTPUT_DIM, HIDDEN_DIM)).astype(np.float32) * scale),
-        "fc3.bias": (rng.standard_normal(OUTPUT_DIM).astype(np.float32) * scale * 0.1),
-    }
 
 
 def _normalize_witness_numbers(payload: dict[str, Any]) -> dict[str, Any]:

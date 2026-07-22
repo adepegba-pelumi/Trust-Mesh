@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -210,3 +211,37 @@ def test_verify_and_execute_receives_proof_artifacts(require_halo2_fixtures: Non
     assert captured["public_inputs"][0] == int(fixture.public_inputs[0])
     assert captured["public_inputs"][1] == int(fixture.public_inputs[1])
     assert isinstance(captured["transaction_payload"], bytes)
+
+
+def test_missing_witness_path_returns_error(tool: TrustMeshVerificationTool, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TRUSTMESH_WITNESS_PATH", raising=False)
+    raw = tool.run(
+        {
+            "target_contract": TARGET,
+            "action_type": "swap",
+            "amount_wei": 1,
+            "pool_liquidity_wei": 10**21,
+            "post_trade_concentration_bps": 500,
+        }
+    )
+    result = TrustMeshVerificationResult.model_validate(json.loads(raw))
+    assert result.success is False
+    assert "TRUSTMESH_WITNESS_PATH" in (result.error_message or "")
+
+
+def test_langchain_production_path_uses_fixture_witness(
+    tool: TrustMeshVerificationTool, require_halo2_fixtures: None
+) -> None:
+    fixture = load_fixture_artifacts()
+    raw = tool.run(
+        {
+            "target_contract": TARGET,
+            "action_type": "swap",
+            "amount_wei": 10**17,
+            "pool_liquidity_wei": int(fixture.public_inputs[0]),
+            "post_trade_concentration_bps": int(fixture.public_inputs[1]),
+        }
+    )
+    result = TrustMeshVerificationResult.model_validate(json.loads(raw))
+    assert result.success is True
+    assert result.public_inputs == list(fixture.public_inputs)

@@ -31,11 +31,11 @@ from web3.contract import Contract
 from web3.exceptions import ContractLogicError
 
 from trustmesh_prover.prover.commitment import encode_as_polynomial, kzg_commit, quantize_model
+from trustmesh_prover.prover.commitment_field import public_commitment_field
 from trustmesh_prover.prover.proof import (
     build_proof_bundle,
-    generate_proof,
-    public_inputs_from_market,
 )
+from trustmesh_prover.prover.witness_builder import build_witness_payload, verify_witness_kzg_commitment
 from trustmesh_prover.srs.loader import load_srs
 
 E2E_DIR = Path(__file__).resolve().parent
@@ -230,14 +230,6 @@ def run_happy_path(
         }
     )
 
-    reg = _send_tx(
-        w3,
-        account,
-        contract.functions.registerAgent(model_commitment),
-        label="registerAgent",
-    )
-    record["registration"] = reg
-
     print("\n=== Step 3–4: Observe market, run inference ===")
     t0 = _stage_start("observing")
     market = observe_market(rng)
@@ -260,6 +252,16 @@ def run_happy_path(
     if concentration_bps > max_bps:
         concentration_bps = int(max_bps - 500)
 
+    witness = build_witness_payload(
+        weights=weights,
+        features=market["features"],
+        model_commitment=model_commitment,
+        pool_liquidity_wei=liquidity_wei,
+        post_trade_concentration_bps=concentration_bps,
+    )
+    commitment_field = public_commitment_field(witness)
+    record["commitment_field"] = str(commitment_field)
+
     record["market"] = {
         "pool_liquidity_eth": market["pool_liquidity_eth"],
         "pool_liquidity_wei": liquidity_wei,
@@ -274,10 +276,25 @@ def run_happy_path(
         concentrationBps=concentration_bps,
     )
 
-    print("\n=== Step 5: Generate proof (Stage 2 mock prover) ===")
+    print("\n=== Step 2: registerAgent (KZG digest + Halo2 commitment field) ===")
+    reg = _send_tx(
+        w3,
+        account,
+        contract.functions.registerAgent(model_commitment, commitment_field),
+        label="registerAgent",
+    )
+    record["registration"] = reg
+
+    print("\n=== Step 5: Generate Halo2 proof ===")
     t2 = _stage_start("proving")
     proof_start = time.perf_counter()
-    bundle = build_proof_bundle(liquidity_wei, concentration_bps, target)
+    bundle = build_proof_bundle(
+        liquidity_wei,
+        concentration_bps,
+        target,
+        witness=witness,
+        registered_commitment=model_commitment,
+    )
     record["proof_generation_seconds"] = round(time.perf_counter() - proof_start, 4)
     record["public_inputs"] = list(bundle.public_inputs)
     _stage_complete(
@@ -334,8 +351,20 @@ def run_constraint_violation(
     account: Account,
     target: str,
 ) -> dict[str, Any]:
-    print("\n=== Constraint violation: concentration cap exceeded ===")
+    print("\n=== Constraint violation: tampered public inputs ===")
     record: dict[str, Any] = {"scenario": "concentration_violation"}
+
+    witness_path = os.environ.get("TRUSTMESH_WITNESS_PATH", "").strip()
+    if not witness_path:
+        raise SystemExit(
+            "TRUSTMESH_WITNESS_PATH must point to the registered agent witness JSON "
+            "(run happy path first or set the fixture witness path)."
+        )
+    witness = json.loads(Path(witness_path).read_text(encoding="utf-8"))
+    model_commitment = contract.functions.agentCommitments(account.address).call()
+    if model_commitment == b"\x00" * 32:
+        raise SystemExit("Agent is not registered — run the happy path scenario first.")
+    verify_witness_kzg_commitment(witness, model_commitment)
 
     t0 = _stage_start("observing")
     safety = contract.functions.safetyConfig().call()
@@ -350,14 +379,25 @@ def run_constraint_violation(
     )
 
     t1 = _stage_start("inferring")
-    public_inputs = public_inputs_from_market(liquidity_wei, violation_bps)
+    bundle = build_proof_bundle(
+        int(witness["pool_liquidity_wei"]),
+        int(witness["post_trade_concentration_bps"]),
+        target,
+        witness=witness,
+        registered_commitment=model_commitment,
+    )
+    public_inputs = list(bundle.public_inputs)
+    public_inputs[1] = violation_bps
     record["public_inputs"] = public_inputs
     record["violation"] = {
-        "type": "ConcentrationExceeded",
+        "type": "TamperedPublicInputs",
         "concentration_bps": violation_bps,
         "max_allowed_bps": max_bps,
     }
-    print(f"  attempting verify with concentration={violation_bps} bps (max={max_bps})")
+    print(
+        "  attempting verify with tampered concentration="
+        f"{violation_bps} bps (proof bound to {bundle.public_inputs[1]})"
+    )
     _stage_complete(
         "inferring",
         t1,
@@ -367,10 +407,7 @@ def run_constraint_violation(
     )
 
     t2 = _stage_start("proving")
-    proof_start = time.perf_counter()
-    proof = generate_proof(public_inputs)
-    payload = build_proof_bundle(liquidity_wei, violation_bps, target).transaction_payload
-    record["proof_generation_seconds"] = round(time.perf_counter() - proof_start, 4)
+    record["proof_generation_seconds"] = 0.0
     _stage_complete(
         "proving",
         t2,
@@ -382,12 +419,12 @@ def run_constraint_violation(
     try:
         contract.functions.verifyAndExecute(
             account.address,
-            proof,
+            bundle.proof,
             public_inputs,
-            payload,
+            bundle.transaction_payload,
         ).call({"from": account.address})
         record["simulation"] = {"reverted": False}
-        print("  WARNING: eth_call succeeded — constraint may not be enforced")
+        print("  WARNING: eth_call succeeded — SNARK binding may not be enforced")
     except ContractLogicError as exc:
         record["simulation"] = {"reverted": True, "message": str(exc)}
         print(f"  eth_call reverted as expected: {exc}")
@@ -395,7 +432,7 @@ def run_constraint_violation(
         "verifying",
         t3,
         simulationReverted=record.get("simulation", {}).get("reverted", False),
-        violationType="ConcentrationExceeded",
+        violationType="TamperedPublicInputs",
     )
 
     t4 = _stage_start("executing")
@@ -405,9 +442,9 @@ def run_constraint_violation(
             account,
             contract.functions.verifyAndExecute(
                 account.address,
-                proof,
+                bundle.proof,
                 public_inputs,
-                payload,
+                bundle.transaction_payload,
             ),
             label="verifyAndExecute (violation)",
             gas=150_000,

@@ -4,7 +4,10 @@
 
 TRUSTMESH_VERIFIER_ABI = [
     {
-        "inputs": [{"internalType": "bytes32", "name": "modelCommitment", "type": "bytes32"}],
+        "inputs": [
+            {"internalType": "bytes32", "name": "modelCommitment", "type": "bytes32"},
+            {"internalType": "uint256", "name": "commitmentField", "type": "uint256"},
+        ],
         "name": "registerAgent",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -52,6 +55,13 @@ TRUSTMESH_VERIFIER_ABI = [
             {"internalType": "uint256", "name": "maxTransactionsPerWindow", "type": "uint256"},
             {"internalType": "uint256", "name": "velocityWindowSeconds", "type": "uint256"},
         ],
+        "stateMutability": "view",
+        "type": "function",
+    },
+    {
+        "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+        "name": "agentCommitmentFields",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
         "stateMutability": "view",
         "type": "function",
     },

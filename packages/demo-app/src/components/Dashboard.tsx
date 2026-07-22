@@ -16,7 +16,7 @@ export function Dashboard() {
   const { rows, lastDecision, isLoading } = useAgentEvents(runner.demoAuditRows);
 
   return (
-    <div className="min-h-screen bg-zinc-100 dark:bg-zinc-900">
+    <div className="min-h-screen bg-background">
       <AppNav />
 
       <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">

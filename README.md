@@ -40,7 +40,7 @@ Additional packages:
 
 | Package | Status |
 |---------|--------|
-| `packages/prover` | KZG commitments + mock PLONK proofs; 32+ pytest tests |
+| `packages/prover` | KZG commitments + production Halo2 proofs (`trustmesh-prove`); security-hardened pytest suite |
 | `packages/contracts` | TrustMeshVerifier on Sepolia; expanded Foundry test suite |
 | `packages/langchain-tool` | `TrustMeshVerificationTool` for LangChain agents |
 | `packages/demo-app` | Dashboard (`/`), agent management (`/agents`), Vitest tests |

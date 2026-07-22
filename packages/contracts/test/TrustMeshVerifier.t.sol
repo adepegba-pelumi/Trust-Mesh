@@ -33,11 +33,12 @@ contract TrustMeshVerifierTest is Halo2FixtureTest {
         vm.stopPrank();
 
         vm.prank(agent);
-        verifier.registerAgent(fixtureModelCommitment);
+        verifier.registerAgent(fixtureModelCommitment, fixtureCommitmentField);
     }
 
     function test_registerAgent_succeedsAndIsQueryable() public view {
         assertEq(verifier.agentCommitments(agent), fixtureModelCommitment);
+        assertEq(verifier.agentCommitmentFields(agent), fixtureCommitmentField);
     }
 
     function test_verifyAndExecute_succeedsWithHalo2Proof() public {
@@ -82,11 +83,14 @@ contract TrustMeshVerifierTest is Halo2FixtureTest {
 
     function test_verifyAndExecute_revertsWhenCommitmentBindingInvalid() public {
         uint256[] memory inputs = _copyInputs();
-        inputs[2] = 1;
+        inputs[2] = fixtureCommitmentField + 1;
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                CommitmentBinding.CommitmentBindingFailed.selector, fixtureModelCommitment, uint256(1)
+                CommitmentBinding.CommitmentBindingFailed.selector,
+                fixtureModelCommitment,
+                fixtureCommitmentField,
+                fixtureCommitmentField + 1
             )
         );
         verifier.verifyAndExecute(agent, fixtureProof, inputs, _payload(target));

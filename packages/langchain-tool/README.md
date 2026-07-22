@@ -33,9 +33,12 @@ cp .env.example .env
 | `SEPOLIA_RPC_URL` | JSON-RPC endpoint (alias: `TRUSTMESH_RPC_URL`) |
 | `DEPLOYER_PRIVATE_KEY` | Agent EOA private key (alias: `TRUSTMESH_AGENT_PRIVATE_KEY`) |
 | `TRUSTMESH_VERIFIER_ADDRESS` | Deployed `TrustMeshVerifier` contract |
+| `TRUSTMESH_WITNESS_PATH` | Halo2 witness JSON for production proving |
+| `TRUSTMESH_PROVE_BIN` | Path to `trustmesh-prove` (optional if on `PATH`) |
+| `TRUSTMESH_PROVING_KEYS` | Directory with Halo2 proving keys |
 
-The agent address derived from the private key must already be registered via
-`registerAgent(modelCommitment)` on the verifier contract.
+The agent address derived from the private key must register via
+`registerAgent(modelCommitment, commitmentField)` on the verifier contract.
 
 ## Tool reference
 
@@ -181,7 +184,8 @@ LangChain Agent
 TrustMeshVerificationTool._run()
       │
       ├─► agentCommitments(agent)     # Stage 1 reference (on-chain)
-      ├─► build_proof_bundle(...)     # Stage 2 mock PLONK prover
+      ├─► load witness (`TRUSTMESH_WITNESS_PATH`)
+      ├─► build_proof_bundle(...)     # Halo2 prover + KZG recompute + local verify
       └─► verifyAndExecute(...)       # Stage 3 TrustMeshVerifier
               │
               ▼
@@ -192,7 +196,7 @@ TrustMeshVerificationTool._run()
 
 | Package | Role |
 |---------|------|
-| [`trustmesh-prover`](../prover) | KZG commitments + mock PLONK proofs |
+| [`trustmesh-prover`](../prover) | KZG commitments + production Halo2 proofs |
 | [`contracts`](../contracts) | Solidity verifier and safety rules |
 | [`demo-app`](../demo-app) | Next.js dashboard for the full pipeline |
 

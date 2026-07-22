@@ -10,7 +10,10 @@ export const fromBlock = BigInt(process.env.NEXT_PUBLIC_FROM_BLOCK ?? "11322690"
 
 export const trustMeshVerifierAbi = [
   {
-    inputs: [{ internalType: "bytes32", name: "modelCommitment", type: "bytes32" }],
+    inputs: [
+      { internalType: "bytes32", name: "modelCommitment", type: "bytes32" },
+      { internalType: "uint256", name: "commitmentField", type: "uint256" },
+    ],
     name: "registerAgent",
     outputs: [],
     stateMutability: "nonpayable",
@@ -20,6 +23,13 @@ export const trustMeshVerifierAbi = [
     inputs: [{ internalType: "address", name: "", type: "address" }],
     name: "agentCommitments",
     outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "address", name: "", type: "address" }],
+    name: "agentCommitmentFields",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
   },
@@ -39,6 +49,7 @@ export const trustMeshVerifierAbi = [
     inputs: [
       { indexed: true, internalType: "address", name: "agent", type: "address" },
       { indexed: false, internalType: "bytes32", name: "modelCommitment", type: "bytes32" },
+      { indexed: false, internalType: "uint256", name: "commitmentField", type: "uint256" },
     ],
     name: "AgentRegistered",
     type: "event",
