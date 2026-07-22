@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+
+import { Providers } from "@/components/Providers";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TrustMesh",
-  description: "Decentralized cryptographic verification for AI outputs",
+  title: "TrustMesh Demo Dashboard",
+  description: "Live Sepolia visualization of the TrustMesh agent verification pipeline",
 };
 
 export default function RootLayout({
@@ -13,7 +16,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

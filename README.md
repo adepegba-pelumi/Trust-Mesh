@@ -36,18 +36,16 @@ Additional packages:
 
 ## Current Status
 
-**Stage 0 — Repository scaffolding only.**
-
-This repository currently contains infrastructure and tooling configuration with **no application logic**:
+**Stages 0–6.5 implemented** — proving layer, contracts, demo dashboard, LangChain tool, comprehensive tests, and agent management UI.
 
 | Package | Status |
 |---------|--------|
-| `packages/prover` | Python project scaffold (uv, pytest, ruff) |
-| `packages/contracts` | Foundry scaffold (Sepolia config, placeholder test) |
-| `packages/langchain-tool` | Python package scaffold |
-| `packages/demo-app` | Next.js 14 shell (TypeScript, Tailwind, wagmi/viem deps) |
+| `packages/prover` | KZG commitments + mock PLONK proofs; 32+ pytest tests |
+| `packages/contracts` | TrustMeshVerifier on Sepolia; expanded Foundry test suite |
+| `packages/langchain-tool` | `TrustMeshVerificationTool` for LangChain agents |
+| `packages/demo-app` | Dashboard (`/`), agent management (`/agents`), Vitest tests |
 
-See `docs/decisions/proving-stack.md` for the proving stack architecture decision record.
+See `docs/deployments.md` for Sepolia addresses and `docs/performance.md` for measured timings.
 
 ## Development
 

@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from eth_abi import encode
+from eth_abi import decode, encode
 from web3 import Web3
 
 # Must match MockPlonkVerifier.PROOF_MAGIC in packages/contracts.
@@ -42,6 +42,16 @@ def encode_transaction_payload(target: str, value: int = 0, calldata: bytes = b"
     return encode(
         ["address", "uint256", "bytes"], [Web3.to_checksum_address(target), value, calldata]
     )
+
+
+def verify_proof(public_inputs: list[int], proof: bytes) -> bool:
+    """Verify a MockPlonkVerifier-compatible PLONK proof against public inputs."""
+    try:
+        decoded_magic, decoded_binding = decode(["bytes32", "bytes32"], proof)
+    except Exception:
+        return False
+    expected_binding = Web3.keccak(encode(["uint256[]"], [public_inputs]))
+    return decoded_magic == PROOF_MAGIC and decoded_binding == expected_binding
 
 
 def generate_proof(public_inputs: list[int], witness: dict[str, Any] | None = None) -> bytes:
