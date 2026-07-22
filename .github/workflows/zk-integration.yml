@@ -37,6 +37,8 @@ jobs:
 
       - name: Python prover tests
         working-directory: packages/prover
+        env:
+          TRUSTMESH_ALLOW_FIXTURES: "true"
         run: |
           uv python install 3.11
           uv sync --dev
@@ -45,6 +47,8 @@ jobs:
 
       - name: LangChain tool tests
         working-directory: packages/langchain-tool
+        env:
+          TRUSTMESH_ALLOW_FIXTURES: "true"
         run: |
           uv sync --dev
           uv run pytest --cov --cov-report=term-missing

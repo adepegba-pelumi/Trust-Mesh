@@ -17,7 +17,10 @@ from trustmesh_prover.prover.proof import (
     public_inputs_from_market,
     verify_proof,
 )
-from trustmesh_prover.prover.witness_builder import validate_witness_against_commitment
+from trustmesh_prover.prover.witness_builder import (
+    KzgCommitmentMismatch,
+    verify_witness_kzg_commitment,
+)
 
 TARGET = "0x4d871E1Dd2193769b4634a27582be18A2962b38c"
 FIXTURE_COMMITMENT = bytes.fromhex("07" * 32)
@@ -34,10 +37,12 @@ def test_public_inputs_from_market_rejects_invalid_bps() -> None:
 
 
 def test_build_proof_bundle_uses_halo2_fixtures_without_binary(require_halo2_fixtures: None) -> None:
+    witness = load_fixture_witness()
     bundle = build_proof_bundle(
         2_000 * 10**18,
         2_500,
         TARGET,
+        witness=witness,
         registered_commitment=FIXTURE_COMMITMENT,
     )
     assert len(bundle.public_inputs) == 3
@@ -56,10 +61,10 @@ def test_verify_proof_accepts_fixture_witness_and_proof(require_halo2_fixtures: 
     assert verify_proof(list(artifacts.public_inputs), artifacts.proof, witness)
 
 
-def test_validate_witness_rejects_wrong_commitment(require_halo2_fixtures: None) -> None:
+def test_verify_witness_rejects_wrong_commitment(require_halo2_fixtures: None) -> None:
     witness = load_fixture_witness()
-    with pytest.raises(ValueError, match="does not match"):
-        validate_witness_against_commitment(witness, b"\x01" * 32)
+    with pytest.raises(KzgCommitmentMismatch):
+        verify_witness_kzg_commitment(witness, b"\x01" * 32)
 
 
 def test_fixture_files_exist() -> None:

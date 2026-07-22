@@ -15,10 +15,13 @@ contract TrustMeshVerifier is Ownable {
 
     SafetyInterceptor.Config public safetyConfig;
     mapping(address => bytes32) public agentCommitments;
+    mapping(address => uint256) public agentCommitmentFields;
     mapping(address => bool) public contractRegistry;
     mapping(address => SafetyInterceptor.VelocityBucket) public agentVelocity;
 
-    event AgentRegistered(address indexed agent, bytes32 modelCommitment);
+    event AgentRegistered(
+        address indexed agent, bytes32 modelCommitment, uint256 commitmentField
+    );
     event ContractRegistered(address indexed target);
     event ContractRemoved(address indexed target);
     event SafetyConfigUpdated(
@@ -48,11 +51,15 @@ contract TrustMeshVerifier is Ownable {
         });
     }
 
-    /// @notice Register the calling agent with a model commitment hash.
-    function registerAgent(bytes32 modelCommitment) external {
+    /// @notice Register the calling agent with a model commitment hash and Halo2 public field.
+    /// @param modelCommitment Stage 1 KZG digest of quantized model weights.
+    /// @param commitmentField Halo2 public input [2] for this model (`kzgField + hash(weights)`).
+    function registerAgent(bytes32 modelCommitment, uint256 commitmentField) external {
         require(modelCommitment != bytes32(0), "Zero commitment");
+        CommitmentBinding.validateRegisteredField(modelCommitment, commitmentField);
         agentCommitments[msg.sender] = modelCommitment;
-        emit AgentRegistered(msg.sender, modelCommitment);
+        agentCommitmentFields[msg.sender] = commitmentField;
+        emit AgentRegistered(msg.sender, modelCommitment, commitmentField);
     }
 
     /// @notice Verify a PLONK proof, enforce safety constraints, and emit a verified decision.
@@ -79,7 +86,9 @@ contract TrustMeshVerifier is Ownable {
             revert InvalidProof();
         }
 
-        CommitmentBinding.verifyRegisteredDigest(modelCommitment, publicInputs[2]);
+        CommitmentBinding.verifyExactBinding(
+            modelCommitment, agentCommitmentFields[agent], publicInputs[2]
+        );
 
         SafetyInterceptor.enforceAll(
             publicInputs,

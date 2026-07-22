@@ -1,6 +1,8 @@
 "use client";
 
 import { sepoliaExplorerAddress } from "@/config/web3";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatModelCommitment, formatTimestamp, normalizeCommitment } from "@/lib/format";
 import type { AuditRow } from "@/types/demo";
 
@@ -18,17 +20,15 @@ export function AgentStatusCard({
   isRunning,
 }: AgentStatusCardProps) {
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <Card>
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 space-y-0">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Agent status
           </p>
-          <h1 className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-            TrustMesh Sepolia Agent
-          </h1>
+          <CardTitle className="mt-2 text-2xl">TrustMesh Sepolia Agent</CardTitle>
           <a
-            className="mt-1 inline-block font-mono text-sm text-sky-600 hover:underline dark:text-sky-400"
+            className="mt-1 inline-block font-mono text-sm text-primary hover:underline"
             href={sepoliaExplorerAddress(agentAddress)}
             rel="noreferrer"
             target="_blank"
@@ -36,33 +36,29 @@ export function AgentStatusCard({
             {agentAddress}
           </a>
         </div>
-        <div
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            isRunning
-              ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
-              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-          }`}
-        >
+        <Badge variant={isRunning ? "warning" : "success"}>
           {isRunning ? "Pipeline running" : "Ready"}
-        </div>
-      </div>
+        </Badge>
+      </CardHeader>
 
-      <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl bg-zinc-50 p-4 dark:bg-zinc-900">
-          <dt className="text-xs uppercase tracking-wide text-zinc-500">Model commitment</dt>
-          <dd className="mt-2 font-mono text-sm text-zinc-900 dark:text-zinc-100">
-            {modelCommitment
-              ? formatModelCommitment(normalizeCommitment(modelCommitment))
-              : "Not registered yet"}
-          </dd>
-        </div>
-        <div className="rounded-xl bg-zinc-50 p-4 dark:bg-zinc-900">
-          <dt className="text-xs uppercase tracking-wide text-zinc-500">Last decision</dt>
-          <dd className="mt-2 text-sm text-zinc-900 dark:text-zinc-100">
-            {lastDecision ? formatTimestamp(lastDecision.timestamp) : "No verified decisions yet"}
-          </dd>
-        </div>
-      </dl>
-    </section>
+      <CardContent>
+        <dl className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg bg-muted p-4">
+            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Model commitment</dt>
+            <dd className="mt-2 font-mono text-sm">
+              {modelCommitment
+                ? formatModelCommitment(normalizeCommitment(modelCommitment))
+                : "Not registered yet"}
+            </dd>
+          </div>
+          <div className="rounded-lg bg-muted p-4">
+            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Last decision</dt>
+            <dd className="mt-2 text-sm">
+              {lastDecision ? formatTimestamp(lastDecision.timestamp) : "No verified decisions yet"}
+            </dd>
+          </div>
+        </dl>
+      </CardContent>
+    </Card>
   );
 }

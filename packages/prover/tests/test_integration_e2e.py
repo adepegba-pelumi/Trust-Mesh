@@ -16,10 +16,12 @@ FIXTURE_COMMITMENT = bytes.fromhex("07" * 32)
 @dataclass
 class MockChain:
     commitments: dict[str, bytes]
+    commitment_fields: dict[str, int]
     receipts: list[dict[str, Any]]
 
-    def register_agent(self, agent: str, commitment: bytes) -> dict[str, Any]:
+    def register_agent(self, agent: str, commitment: bytes, commitment_field: int) -> dict[str, Any]:
         self.commitments[agent.lower()] = commitment
+        self.commitment_fields[agent.lower()] = commitment_field
         return {"tx_hash": "0xreg", "status": 1}
 
     def verify_and_execute(
@@ -42,6 +44,10 @@ class MockChain:
         if len(public_inputs) < 3:
             return {"tx_hash": "0xfail", "status": 0, "error": "InvalidPublicInputs"}
 
+        registered_field = self.commitment_fields.get(agent.lower(), 0)
+        if public_inputs[2] != registered_field:
+            return {"tx_hash": "0xfail", "status": 0, "error": "CommitmentBindingFailed"}
+
         if public_inputs[0] < min_liquidity:
             return {"tx_hash": "0xfail", "status": 0, "error": "LiquidityBelowMinimum"}
 
@@ -62,13 +68,15 @@ class MockChain:
 
 
 def test_happy_path_register_commit_prove_verify(require_halo2_fixtures: None) -> None:
-    chain = MockChain(commitments={}, receipts=[])
-    chain.register_agent(AGENT, FIXTURE_COMMITMENT)
+    chain = MockChain(commitments={}, commitment_fields={}, receipts=[])
     artifacts = load_fixture_artifacts()
+    witness = load_fixture_witness()
+    chain.register_agent(AGENT, FIXTURE_COMMITMENT, int(artifacts.public_inputs[2]))
     bundle = build_proof_bundle(
         int(artifacts.public_inputs[0]),
         int(artifacts.public_inputs[1]),
         TARGET,
+        witness=witness,
         registered_commitment=FIXTURE_COMMITMENT,
     )
     result = chain.verify_and_execute(
@@ -82,9 +90,10 @@ def test_happy_path_register_commit_prove_verify(require_halo2_fixtures: None) -
 
 
 def test_failure_path_safety_constraint_violation(require_halo2_fixtures: None) -> None:
-    chain = MockChain(commitments={}, receipts=[])
-    chain.register_agent(AGENT, FIXTURE_COMMITMENT)
+    chain = MockChain(commitments={}, commitment_fields={}, receipts=[])
     artifacts = load_fixture_artifacts()
+    witness = load_fixture_witness()
+    chain.register_agent(AGENT, FIXTURE_COMMITMENT, int(artifacts.public_inputs[2]))
     tampered_inputs = list(artifacts.public_inputs)
     tampered_inputs[1] = 9_000
     result = chain.verify_and_execute(
@@ -95,6 +104,7 @@ def test_failure_path_safety_constraint_violation(require_halo2_fixtures: None) 
             int(artifacts.public_inputs[0]),
             int(artifacts.public_inputs[1]),
             TARGET,
+            witness=witness,
             registered_commitment=FIXTURE_COMMITMENT,
         ).transaction_payload,
     )
@@ -103,11 +113,13 @@ def test_failure_path_safety_constraint_violation(require_halo2_fixtures: None) 
 
 
 def test_failure_path_unregistered_agent(require_halo2_fixtures: None) -> None:
-    chain = MockChain(commitments={}, receipts=[])
+    chain = MockChain(commitments={}, commitment_fields={}, receipts=[])
+    witness = load_fixture_witness()
     bundle = build_proof_bundle(
         2_000 * 10**18,
         2_500,
         TARGET,
+        witness=witness,
         registered_commitment=FIXTURE_COMMITMENT,
     )
     result = chain.verify_and_execute(

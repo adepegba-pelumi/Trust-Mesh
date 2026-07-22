@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from typing import Any
 
 from langchain_core.tools import ArgsSchema, BaseTool
@@ -57,6 +58,7 @@ class TrustMeshVerificationTool(BaseTool):
         - ``SEPOLIA_RPC_URL`` (or ``TRUSTMESH_RPC_URL``)
         - ``DEPLOYER_PRIVATE_KEY`` (or ``TRUSTMESH_AGENT_PRIVATE_KEY``)
         - ``TRUSTMESH_VERIFIER_ADDRESS``
+        - ``TRUSTMESH_WITNESS_PATH`` — Halo2 witness JSON for production proving
         """
         rpc_url = os.environ.get("TRUSTMESH_RPC_URL") or os.environ.get("SEPOLIA_RPC_URL", "")
         private_key = os.environ.get("TRUSTMESH_AGENT_PRIVATE_KEY") or os.environ.get(
@@ -64,6 +66,7 @@ class TrustMeshVerificationTool(BaseTool):
             "",
         )
         verifier_address = os.environ.get("TRUSTMESH_VERIFIER_ADDRESS", "")
+        witness_path = os.environ.get("TRUSTMESH_WITNESS_PATH", "")
 
         missing = [
             name
@@ -71,6 +74,7 @@ class TrustMeshVerificationTool(BaseTool):
                 ("TRUSTMESH_RPC_URL / SEPOLIA_RPC_URL", rpc_url),
                 ("TRUSTMESH_AGENT_PRIVATE_KEY / DEPLOYER_PRIVATE_KEY", private_key),
                 ("TRUSTMESH_VERIFIER_ADDRESS", verifier_address),
+                ("TRUSTMESH_WITNESS_PATH", witness_path),
             ]
             if not value.strip()
         ]
@@ -146,6 +150,17 @@ class TrustMeshVerificationTool(BaseTool):
 
         payload_calldata = normalize_calldata(calldata)
 
+        try:
+            witness = _load_production_witness()
+        except ValueError as exc:
+            result = TrustMeshVerificationResult(
+                success=False,
+                reverted=True,
+                action_type=action_type,
+                error_message=str(exc),
+            )
+            return result.model_dump_json()
+
         def build_bundle() -> Any:
             return build_proof_bundle(
                 pool_liquidity_wei,
@@ -153,6 +168,7 @@ class TrustMeshVerificationTool(BaseTool):
                 target_contract,
                 value=amount_wei,
                 calldata=payload_calldata,
+                witness=witness,
                 registered_commitment=model_commitment,
             )
 
@@ -210,3 +226,19 @@ class TrustMeshVerificationTool(BaseTool):
             calldata=action.calldata,
         )
         return TrustMeshVerificationResult.model_validate(json.loads(raw))
+
+
+def _load_production_witness() -> dict[str, Any]:
+    path = os.environ.get("TRUSTMESH_WITNESS_PATH", "").strip()
+    if not path:
+        msg = "TRUSTMESH_WITNESS_PATH must point to a Halo2 witness JSON for production proving"
+        raise ValueError(msg)
+    witness_path = Path(path)
+    if not witness_path.is_file():
+        msg = f"TRUSTMESH_WITNESS_PATH does not exist: {path}"
+        raise ValueError(msg)
+    payload = json.loads(witness_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        msg = "witness JSON must be an object"
+        raise ValueError(msg)
+    return payload

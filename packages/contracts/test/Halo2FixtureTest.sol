@@ -11,6 +11,7 @@ abstract contract Halo2FixtureTest is Test {
     bytes internal fixtureProof;
     uint256[] internal fixturePublicInputs;
     bytes32 internal fixtureModelCommitment;
+    uint256 internal fixtureCommitmentField;
 
     function setUp() public virtual {
         string memory root = vm.projectRoot();
@@ -25,5 +26,6 @@ abstract contract Halo2FixtureTest is Test {
         fixturePublicInputs[1] = bundle.readUint(".public_inputs[1]");
         fixturePublicInputs[2] = bundle.readUint(".public_inputs[2]");
         fixtureModelCommitment = vm.parseJsonBytes32(witness, ".model_commitment");
+        fixtureCommitmentField = fixturePublicInputs[2];
     }
 }

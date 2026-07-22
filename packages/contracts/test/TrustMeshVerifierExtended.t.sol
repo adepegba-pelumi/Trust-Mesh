@@ -18,8 +18,6 @@ contract TrustMeshVerifierExtendedTest is Halo2FixtureTest {
     address internal target = makeAddr("target");
     address internal stranger = makeAddr("stranger");
 
-    bytes32 internal constant MODEL_V2 = keccak256("model-v2");
-
     function setUp() public override {
         super.setUp();
         plonk = new Halo2PlonkVerifier();
@@ -37,14 +35,24 @@ contract TrustMeshVerifierExtendedTest is Halo2FixtureTest {
     function test_registerAgent_revertsOnZeroCommitment() public {
         vm.prank(agent);
         vm.expectRevert("Zero commitment");
-        verifier.registerAgent(bytes32(0));
+        verifier.registerAgent(bytes32(0), fixtureCommitmentField);
+    }
+
+    function test_registerAgent_revertsOnZeroCommitmentField() public {
+        vm.prank(agent);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CommitmentBinding.InvalidRegisteredCommitmentField.selector, fixtureModelCommitment, uint256(0)
+            )
+        );
+        verifier.registerAgent(fixtureModelCommitment, 0);
     }
 
     function test_registerAgent_emitsEvent() public {
         vm.expectEmit(true, true, true, true);
-        emit TrustMeshVerifier.AgentRegistered(agent, fixtureModelCommitment);
+        emit TrustMeshVerifier.AgentRegistered(agent, fixtureModelCommitment, fixtureCommitmentField);
         vm.prank(agent);
-        verifier.registerAgent(fixtureModelCommitment);
+        verifier.registerAgent(fixtureModelCommitment, fixtureCommitmentField);
     }
 
     function test_verifyAndExecute_revertsWhenAgentNotRegistered() public {
@@ -54,7 +62,7 @@ contract TrustMeshVerifierExtendedTest is Halo2FixtureTest {
 
     function test_verifyAndExecute_revertsOnInvalidPublicInputsLength() public {
         vm.prank(agent);
-        verifier.registerAgent(fixtureModelCommitment);
+        verifier.registerAgent(fixtureModelCommitment, fixtureCommitmentField);
 
         uint256[] memory inputs = new uint256[](2);
         inputs[0] = fixturePublicInputs[0];
@@ -66,7 +74,7 @@ contract TrustMeshVerifierExtendedTest is Halo2FixtureTest {
 
     function test_verifyAndExecute_revertsOnInvalidPayload() public {
         vm.prank(agent);
-        verifier.registerAgent(fixtureModelCommitment);
+        verifier.registerAgent(fixtureModelCommitment, fixtureCommitmentField);
 
         vm.expectRevert(SafetyInterceptor.InvalidTransactionPayload.selector);
         verifier.verifyAndExecute(agent, fixtureProof, fixturePublicInputs, bytes(""));
@@ -74,7 +82,7 @@ contract TrustMeshVerifierExtendedTest is Halo2FixtureTest {
 
     function test_verifyAndExecute_gasSnapshot() public {
         vm.prank(agent);
-        verifier.registerAgent(fixtureModelCommitment);
+        verifier.registerAgent(fixtureModelCommitment, fixtureCommitmentField);
 
         uint256 gasBefore = gasleft();
         verifier.verifyAndExecute(agent, fixtureProof, fixturePublicInputs, _payload(target));
@@ -83,8 +91,9 @@ contract TrustMeshVerifierExtendedTest is Halo2FixtureTest {
         assertLt(gasUsed, 2_000_000);
     }
 
-    function test_commitmentBinding_matchesFixtureDigest() public pure {
-        assertGt(CommitmentBinding.kzgDigestToField(bytes32(uint256(7))), 0);
+    function test_commitmentBinding_matchesFixtureDigest() public view {
+        assertGt(CommitmentBinding.kzgDigestToField(fixtureModelCommitment), 0);
+        CommitmentBinding.validateRegisteredField(fixtureModelCommitment, fixtureCommitmentField);
     }
 
     function _payload(address to) internal pure returns (bytes memory) {

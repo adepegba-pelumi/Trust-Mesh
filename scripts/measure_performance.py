@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import statistics
 import time
 
@@ -38,6 +39,7 @@ def _time_call(fn, *, rounds: int = 5) -> dict[str, float]:
 
 
 def main() -> None:
+    os.environ.setdefault("TRUSTMESH_ALLOW_FIXTURES", "true")
     rng = np.random.default_rng(42)
     weights = {
         "fc1.weight": (rng.standard_normal((16, 8)).astype(np.float32) * 0.1),
@@ -75,6 +77,7 @@ def main() -> None:
             public_inputs[0],
             public_inputs[1],
             TARGET,
+            witness=witness,
             registered_commitment=FIXTURE_COMMITMENT,
         ),
         rounds=5,

@@ -5,20 +5,18 @@ import { sepoliaExplorerAddress } from "@/config/web3";
 
 export default function AgentsPage() {
   return (
-    <div className="min-h-screen bg-zinc-100 dark:bg-zinc-900">
+    <div className="min-h-screen bg-background">
       <AppNav />
       <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-              Agent management
-            </h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold tracking-tight">Agent management</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Register agents on Sepolia without running Python scripts.
             </p>
           </div>
           <a
-            className="font-mono text-xs text-sky-600 hover:underline dark:text-sky-400"
+            className="font-mono text-xs text-primary hover:underline"
             href={sepoliaExplorerAddress(trustMeshVerifierAddress)}
             rel="noreferrer"
             target="_blank"
