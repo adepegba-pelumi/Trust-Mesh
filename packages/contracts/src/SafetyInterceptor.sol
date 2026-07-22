@@ -3,9 +3,10 @@ pragma solidity ^0.8.24;
 
 /// @title SafetyInterceptor
 /// @notice On-chain enforcement of TrustMesh agent safety constraints.
-/// @dev Public input layout (must match Stage 2 circuit):
+/// @dev Public input layout (must match Stage 6.75 Halo2 circuit):
 ///   publicInputs[0] — pool liquidity (uint256)
 ///   publicInputs[1] — post-transaction single-asset concentration (basis points, 0–10000)
+///   publicInputs[2] — model commitment field (`kzgDigestToField + hash(weights)`)
 library SafetyInterceptor {
     /// @dev Rolling velocity bucket per agent.
     struct VelocityBucket {
@@ -45,7 +46,7 @@ library SafetyInterceptor {
         mapping(address => VelocityBucket) storage velocity,
         address agent
     ) internal {
-        if (publicInputs.length < 2) {
+        if (publicInputs.length < 3) {
             revert InvalidPublicInputs();
         }
 

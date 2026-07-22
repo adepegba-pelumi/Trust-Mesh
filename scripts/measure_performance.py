@@ -12,15 +12,15 @@ import numpy as np
 from trustmesh_prover.prover import (
     build_proof_bundle,
     encode_as_polynomial,
-    generate_proof,
     kzg_commit,
     load_default_srs,
     quantize_model,
-    verify_proof,
 )
+from trustmesh_prover.prover.halo2_cli import load_fixture_artifacts, load_fixture_witness
+from trustmesh_prover.prover.proof import generate_proof, verify_proof
 
 TARGET = "0x4d871E1Dd2193769b4634a27582be18A2962b38c"
-PUBLIC_INPUTS = [2_000 * 10**18, 2_500]
+FIXTURE_COMMITMENT = bytes.fromhex("07" * 32)
 
 
 def _time_call(fn, *, rounds: int = 5) -> dict[str, float]:
@@ -56,12 +56,28 @@ def main() -> None:
         rounds=3,
     )
 
-    proof = generate_proof(PUBLIC_INPUTS)
-    proof_timing = _time_call(lambda: generate_proof(PUBLIC_INPUTS), rounds=20)
-    verify_timing = _time_call(lambda: verify_proof(PUBLIC_INPUTS, proof), rounds=50)
+    try:
+        artifacts = load_fixture_artifacts()
+        witness = load_fixture_witness()
+        public_inputs = list(artifacts.public_inputs)
+    except Exception as exc:  # noqa: BLE001
+        print(json.dumps({"error": f"Halo2 fixtures unavailable: {exc}"}, indent=2))
+        return
+
+    proof = artifacts.proof
+    proof_timing = _time_call(
+        lambda: generate_proof(public_inputs, witness=witness, registered_commitment=FIXTURE_COMMITMENT),
+        rounds=5,
+    )
+    verify_timing = _time_call(lambda: verify_proof(public_inputs, proof, witness), rounds=20)
     bundle_timing = _time_call(
-        lambda: build_proof_bundle(PUBLIC_INPUTS[0], PUBLIC_INPUTS[1], TARGET),
-        rounds=20,
+        lambda: build_proof_bundle(
+            public_inputs[0],
+            public_inputs[1],
+            TARGET,
+            registered_commitment=FIXTURE_COMMITMENT,
+        ),
+        rounds=5,
     )
 
     print(

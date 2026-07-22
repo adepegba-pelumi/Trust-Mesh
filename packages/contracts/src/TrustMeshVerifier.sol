@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
+import {CommitmentBinding} from "./CommitmentBinding.sol";
 import {IPlonkVerifier} from "./interfaces/IPlonkVerifier.sol";
 import {SafetyInterceptor} from "./SafetyInterceptor.sol";
 
@@ -33,6 +34,7 @@ contract TrustMeshVerifier is Ownable {
 
     error AgentNotRegistered(address agent);
     error InvalidProof();
+    error InvalidPublicInputs();
 
     constructor(address plonkVerifier_, address initialOwner) Ownable(initialOwner) {
         require(plonkVerifier_ != address(0), "Zero verifier");
@@ -69,9 +71,15 @@ contract TrustMeshVerifier is Ownable {
             revert AgentNotRegistered(agent);
         }
 
+        if (publicInputs.length < 3) {
+            revert InvalidPublicInputs();
+        }
+
         if (!plonkVerifier.verifyProof(publicInputs, proof)) {
             revert InvalidProof();
         }
+
+        CommitmentBinding.verifyRegisteredDigest(modelCommitment, publicInputs[2]);
 
         SafetyInterceptor.enforceAll(
             publicInputs,

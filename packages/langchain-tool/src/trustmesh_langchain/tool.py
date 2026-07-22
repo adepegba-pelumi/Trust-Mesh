@@ -29,7 +29,7 @@ class TrustMeshVerificationTool(BaseTool):
 
     Workflow:
     1. Read the agent's registered model commitment (Stage 1 reference on-chain).
-    2. Generate a Stage 2 mock PLONK proof binding market safety public inputs.
+    2. Generate a production Halo2 proof binding market safety public inputs.
     3. Call ``TrustMeshVerifier.verifyAndExecute`` (Stage 3).
     4. Return a structured JSON result for downstream agent reasoning.
     """
@@ -153,6 +153,7 @@ class TrustMeshVerificationTool(BaseTool):
                 target_contract,
                 value=amount_wei,
                 calldata=payload_calldata,
+                registered_commitment=model_commitment,
             )
 
         bundle, proof_seconds = measure_proof_generation(build_bundle)

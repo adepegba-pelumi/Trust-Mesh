@@ -6,6 +6,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use trustmesh_prover_core::{
     circuit::{circuit_params, PUBLIC_INPUT_COUNT},
+    export_solidity_verifier,
     keys::{load_params, load_proving_key, load_verifying_key, save_keys, setup_keys, KeyMaterial},
     prove::{benchmark, prove, verify_local},
     types::{BenchmarkReport, ProofArtifacts, SetupReport, VerifyReport, WitnessInput},
@@ -23,6 +24,15 @@ enum Commands {
     /// Generate SRS params, proving key, and verification key.
     Setup {
         #[arg(long, default_value = "keys")]
+        output: PathBuf,
+        #[arg(long, default_value_t = false)]
+        json: bool,
+    },
+    /// Export a Solidity Halo2 verifier for the TrustMesh circuit.
+    ExportSolidity {
+        #[arg(long, default_value = "keys")]
+        keys: PathBuf,
+        #[arg(long)]
         output: PathBuf,
         #[arg(long, default_value_t = false)]
         json: bool,
@@ -58,6 +68,17 @@ enum Commands {
         #[arg(long, default_value_t = false)]
         json: bool,
     },
+    /// Write deterministic proof fixtures for Foundry and pytest.
+    ExportFixtures {
+        #[arg(long)]
+        witness: PathBuf,
+        #[arg(long, default_value = "keys")]
+        keys: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+        #[arg(long, default_value_t = false)]
+        json: bool,
+    },
 }
 
 fn main() -> Result<()> {
@@ -71,6 +92,11 @@ fn main() -> Result<()> {
                 circuit_k: circuit_params().k,
                 public_input_count: PUBLIC_INPUT_COUNT,
             };
+            emit(json, &report)?;
+        }
+        Commands::ExportSolidity { keys, output, json } => {
+            let material = load_keys_from(&keys)?;
+            let report = export_solidity_verifier(&material, &output)?;
             emit(json, &report)?;
         }
         Commands::Prove {
@@ -94,7 +120,7 @@ fn main() -> Result<()> {
             json,
         } => {
             let witness = read_witness(&witness)?;
-            let proof_bytes = fs::read(&proof)?;
+            let proof_bytes = read_proof_bytes(&proof)?;
             let material = load_keys_from(&keys)?;
             let report = verify_local(&material, &proof_bytes, &witness)?;
             emit(json, &report)?;
@@ -108,6 +134,39 @@ fn main() -> Result<()> {
             let material = load_keys_from(&keys)?;
             let report = benchmark(&material, witness)?;
             emit(json, &report)?;
+        }
+        Commands::ExportFixtures {
+            witness,
+            keys,
+            output_dir,
+            json,
+        } => {
+            std::env::set_var("TRUSTMESH_PROOF_SEED", "42");
+            let witness_input = read_witness(&witness)?;
+            let material = load_keys_from(&keys)?;
+            let artifacts = prove(&material, witness_input.clone())?;
+            fs::create_dir_all(&output_dir)?;
+            let bundle_path = output_dir.join("proof_bundle.json");
+            fs::write(&bundle_path, serde_json::to_vec_pretty(&artifacts)?)?;
+            let mut bundle_json: serde_json::Value =
+                serde_json::from_slice(&fs::read(&bundle_path)?)?;
+            if let Some(obj) = bundle_json.as_object_mut() {
+                obj.insert(
+                    "proof_hex".to_string(),
+                    serde_json::Value::String(hex::encode(&artifacts.proof)),
+                );
+            }
+            fs::write(&bundle_path, serde_json::to_vec_pretty(&bundle_json)?)?;
+            let witness_path = output_dir.join("witness.json");
+            fs::write(&witness_path, serde_json::to_vec_pretty(&witness_input)?)?;
+            let summary = serde_json::json!({
+                "proof_bundle": bundle_path.display().to_string(),
+                "witness": witness_path.display().to_string(),
+                "model_commitment": hex::encode(witness_input.model_commitment),
+                "public_inputs": artifacts.public_inputs,
+                "proof_size": artifacts.proof_size,
+            });
+            emit(json, &summary)?;
         }
     }
     Ok(())
@@ -125,6 +184,15 @@ fn emit<T: serde::Serialize>(json: bool, value: &T) -> Result<()> {
 fn read_witness(path: &PathBuf) -> Result<WitnessInput> {
     let raw = fs::read_to_string(path)?;
     serde_json::from_str(&raw).context("parse witness json")
+}
+
+fn read_proof_bytes(path: &PathBuf) -> Result<Vec<u8>> {
+    let raw = fs::read(path)?;
+    if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+        let artifacts: ProofArtifacts = serde_json::from_slice(&raw).context("parse proof json")?;
+        return Ok(artifacts.proof);
+    }
+    Ok(raw)
 }
 
 fn load_keys_from(dir: &PathBuf) -> Result<KeyMaterial> {
