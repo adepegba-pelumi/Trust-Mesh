@@ -5,7 +5,12 @@ from __future__ import annotations
 from eth_abi import decode, encode
 from web3 import Web3
 
-from trustmesh_prover.prover.proof import PROOF_MAGIC, generate_proof, public_inputs_from_market
+from trustmesh_prover.prover.proof import (
+    PROOF_MAGIC,
+    generate_proof,
+    public_inputs_from_market,
+    verify_proof,
+)
 
 
 def test_generate_proof_matches_mock_plonk_binding() -> None:
@@ -17,6 +22,7 @@ def test_generate_proof_matches_mock_plonk_binding() -> None:
 
     assert decoded_magic == PROOF_MAGIC
     assert decoded_binding == expected_binding
+    assert verify_proof(public_inputs, proof) is True
 
 
 def test_public_inputs_from_market() -> None:

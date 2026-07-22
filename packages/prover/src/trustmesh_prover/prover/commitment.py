@@ -359,8 +359,11 @@ def verify_partial_opening(
         # Deserialize commitment from bytes for verify.
         from trustmesh_prover.srs.loader import _deserialize_g1
 
-        commitment_point = _deserialize_g1(chunk_commitment_bytes)
-        proof_point = _deserialize_g1(entry.proof)
+        try:
+            commitment_point = _deserialize_g1(chunk_commitment_bytes)
+            proof_point = _deserialize_g1(entry.proof)
+        except ValueError:
+            return False
 
         if not verify_opening(
             commitment_point,
