@@ -1,12 +1,19 @@
 import type { Abi } from "viem";
 
+/** Deployed TrustMeshVerifier — required for dashboard event indexing (see docs/deployments.md). */
 export const trustMeshVerifierAddress = (process.env.NEXT_PUBLIC_TRUSTMESH_VERIFIER_ADDRESS ??
-  "0x4d871E1Dd2193769b4634a27582be18A2962b38c") as `0x${string}`;
+  "") as `0x${string}`;
 
-export const agentAddress = (process.env.NEXT_PUBLIC_AGENT_ADDRESS ??
-  "0x8aff698EBd8d18B3A5dd2bDFb6E2A2196e489994") as `0x${string}`;
+/** Registered agent address shown in the dashboard. */
+export const agentAddress = (process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? "") as `0x${string}`;
 
-export const fromBlock = BigInt(process.env.NEXT_PUBLIC_FROM_BLOCK ?? "11322690");
+/** Block to start scanning VerifiedDecision logs (TrustMeshVerifier deploy block). */
+export const fromBlock = process.env.NEXT_PUBLIC_FROM_BLOCK
+  ? BigInt(process.env.NEXT_PUBLIC_FROM_BLOCK)
+  : 0n;
+
+export const contractsConfigured =
+  trustMeshVerifierAddress.length === 42 && agentAddress.length === 42;
 
 export const trustMeshVerifierAbi = [
   {
