@@ -1,7 +1,9 @@
 use std::time::Instant;
 
 use anyhow::{Context, Result};
-use halo2_proofs::plonk::{create_proof, verify_proof, SingleVerifier};
+use halo2_proofs::plonk::{create_proof, verify_proof};
+use halo2_proofs::poly::kzg::multiopen::{ProverSHPLONK, VerifierSHPLONK};
+use halo2_proofs::poly::kzg::strategy::SingleStrategy;
 use halo2_solidity_verifier::Keccak256Transcript;
 use halo2curves::bn256::Fr;
 use rand::rngs::OsRng;
@@ -21,7 +23,7 @@ pub fn prove(material: &KeyMaterial, witness: WitnessInput) -> Result<ProofArtif
 
     let start = Instant::now();
     let mut transcript = Keccak256Transcript::new(Vec::new());
-    create_proof(
+    create_proof::<_, ProverSHPLONK<_>, _, _, _, _>(
         &material.params,
         &material.pk,
         &[circuit],
@@ -51,13 +53,12 @@ pub fn verify_local(
     witness: &WitnessInput,
 ) -> Result<VerifyReport> {
     let instances = public_instances(witness);
-    let strategy = SingleVerifier::new(&material.params);
     let mut transcript = Keccak256Transcript::new(proof);
     let start = Instant::now();
-    verify_proof(
+    verify_proof::<_, VerifierSHPLONK<_>, _, _, SingleStrategy<_>>(
         &material.params,
         &material.vk,
-        strategy,
+        SingleStrategy::new(&material.params),
         &[&[&instances[..]]],
         &mut transcript,
     )
