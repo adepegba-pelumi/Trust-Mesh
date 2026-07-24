@@ -103,7 +103,7 @@ impl Circuit<Fr> for TrustMeshCircuit {
             let s = meta.query_selector(selector_relu);
             let x = meta.query_advice(advice[0], Rotation::cur());
             let out = meta.query_advice(advice[1], Rotation::cur());
-            vec![s * (x - out) * out]
+            vec![s * (x - out.clone()) * out]
         });
 
         TrustMeshConfig {
@@ -228,7 +228,7 @@ fn expose_public_input(
     idx: usize,
     value: Fr,
     name: &str,
-) -> Result<AssignedCell<Fr>, Error> {
+) -> Result<AssignedCell<Fr, Fr>, Error> {
     let cell = layouter.assign_region(
         || format!("public_{name}"),
         |mut region| {
@@ -244,7 +244,7 @@ fn assign_private(
     layouter: &mut impl Layouter<Fr>,
     name: &str,
     value: Fr,
-) -> Result<AssignedCell<Fr>, Error> {
+) -> Result<AssignedCell<Fr, Fr>, Error> {
     layouter.assign_region(
         || name.to_string(),
         |mut region| region.assign_advice(|| name, config.advice[0], 0, || Value::known(value)),
@@ -254,9 +254,9 @@ fn assign_private(
 fn assign_mul(
     config: &TrustMeshConfig,
     layouter: &mut impl Layouter<Fr>,
-    a: &AssignedCell<Fr>,
-    b: &AssignedCell<Fr>,
-) -> Result<AssignedCell<Fr>, Error> {
+    a: &AssignedCell<Fr, Fr>,
+    b: &AssignedCell<Fr, Fr>,
+) -> Result<AssignedCell<Fr, Fr>, Error> {
     layouter.assign_region(
         || "mul",
         |mut region| {
@@ -272,9 +272,9 @@ fn assign_mul(
 fn assign_add(
     config: &TrustMeshConfig,
     layouter: &mut impl Layouter<Fr>,
-    a: &AssignedCell<Fr>,
-    b: &AssignedCell<Fr>,
-) -> Result<AssignedCell<Fr>, Error> {
+    a: &AssignedCell<Fr, Fr>,
+    b: &AssignedCell<Fr, Fr>,
+) -> Result<AssignedCell<Fr, Fr>, Error> {
     layouter.assign_region(
         || "add",
         |mut region| {
@@ -290,9 +290,9 @@ fn assign_add(
 fn assign_relu(
     config: &TrustMeshConfig,
     layouter: &mut impl Layouter<Fr>,
-    pre: &AssignedCell<Fr>,
+    pre: &AssignedCell<Fr, Fr>,
     post: Fr,
-) -> Result<AssignedCell<Fr>, Error> {
+) -> Result<AssignedCell<Fr, Fr>, Error> {
     layouter.assign_region(
         || "relu",
         |mut region| {
@@ -306,10 +306,12 @@ fn assign_relu(
 fn constrain_equal_cells(
     _config: &TrustMeshConfig,
     layouter: &mut impl Layouter<Fr>,
-    left: &AssignedCell<Fr>,
-    right: &AssignedCell<Fr>,
+    left: &AssignedCell<Fr, Fr>,
+    right: &AssignedCell<Fr, Fr>,
 ) -> Result<(), Error> {
-    layouter.assign_region(|| "equal", |mut region| left.constrain_equal(&mut region, right))
+    layouter.assign_region(|| "equal", |mut region| {
+        region.constrain_equal(left.cell(), right.cell())
+    })
 }
 
 fn synthesize_relu_layer(
@@ -321,7 +323,7 @@ fn synthesize_relu_layer(
     input_dim: usize,
     output_dim: usize,
     relu_outputs: &[i64],
-) -> Result<Vec<AssignedCell<Fr>>, Error> {
+) -> Result<Vec<AssignedCell<Fr, Fr>>, Error> {
     let mut out_cells = Vec::with_capacity(output_dim);
     for h in 0..output_dim {
         let bias_cell = assign_private(config, layouter, "bias", i64_to_fr(biases[h]))?;
@@ -346,14 +348,14 @@ fn synthesize_relu_layer(
 fn synthesize_relu_layer_from_cells(
     config: &TrustMeshConfig,
     layouter: &mut impl Layouter<Fr>,
-    input_cells: &[AssignedCell<Fr>],
+    input_cells: &[AssignedCell<Fr, Fr>],
     input_values: &[i64],
     weights: &[i64],
     biases: &[i64],
     input_dim: usize,
     output_dim: usize,
     relu_outputs: &[i64],
-) -> Result<Vec<AssignedCell<Fr>>, Error> {
+) -> Result<Vec<AssignedCell<Fr, Fr>>, Error> {
     let mut out_cells = Vec::with_capacity(output_dim);
     for h in 0..output_dim {
         let bias_cell = assign_private(config, layouter, "bias", i64_to_fr(biases[h]))?;
@@ -379,14 +381,14 @@ fn synthesize_relu_layer_from_cells(
 fn synthesize_linear_layer_from_cells(
     config: &TrustMeshConfig,
     layouter: &mut impl Layouter<Fr>,
-    input_cells: &[AssignedCell<Fr>],
+    input_cells: &[AssignedCell<Fr, Fr>],
     input_values: &[i64],
     weights: &[i64],
     biases: &[i64],
     input_dim: usize,
     output_dim: usize,
     logits: &[i64],
-) -> Result<Vec<AssignedCell<Fr>>, Error> {
+) -> Result<Vec<AssignedCell<Fr, Fr>>, Error> {
     let mut out_cells = Vec::with_capacity(output_dim);
     for o in 0..output_dim {
         let bias_cell = assign_private(config, layouter, "bias", i64_to_fr(biases[o]))?;

@@ -7,6 +7,7 @@ use halo2_solidity_verifier::{BatchOpenScheme::Bdfg21, SolidityGenerator};
 use crate::circuit::PUBLIC_INPUT_COUNT;
 use crate::keys::KeyMaterial;
 
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct SolidityExportReport {
     pub verifier_path: String,
     pub instance_count: usize,

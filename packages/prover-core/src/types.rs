@@ -20,7 +20,7 @@ pub struct WitnessInput {
 }
 
 mod serde_u128_string {
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use serde::{Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S: Serializer>(value: &u128, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&value.to_string())
@@ -40,7 +40,7 @@ mod serde_u128_string {
 }
 
 mod serde_bytes {
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use serde::{Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S: Serializer>(bytes: &[u8; 32], serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&hex::encode(bytes))
@@ -91,7 +91,7 @@ pub struct ProofArtifacts {
 
 mod serde_bytes_vec {
     use base64::{engine::general_purpose::STANDARD, Engine as _};
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use serde::{Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S: Serializer>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&STANDARD.encode(bytes))

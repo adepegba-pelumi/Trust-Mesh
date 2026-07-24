@@ -6,16 +6,16 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use halo2_proofs::plonk::{keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
-use halo2_proofs::poly::commitment::Params;
+use halo2_proofs::poly::commitment::{Params, ParamsProver};
 use halo2_proofs::poly::kzg::commitment::ParamsKZG;
-use halo2curves::bn256::Bn256;
+use halo2curves::bn256::{Bn256, G1Affine};
 
 use crate::circuit::{circuit_params, TrustMeshCircuit};
 
 pub struct KeyMaterial {
     pub params: ParamsKZG<Bn256>,
-    pub pk: ProvingKey<Bn256>,
-    pub vk: VerifyingKey<Bn256>,
+    pub pk: ProvingKey<G1Affine>,
+    pub vk: VerifyingKey<G1Affine>,
 }
 
 pub fn setup_keys() -> Result<KeyMaterial> {
@@ -43,11 +43,11 @@ pub fn load_params(dir: &Path) -> Result<ParamsKZG<Bn256>> {
     read_params(&dir.join("params.bin"))
 }
 
-pub fn load_proving_key(dir: &Path, params: &ParamsKZG<Bn256>) -> Result<ProvingKey<Bn256>> {
+pub fn load_proving_key(dir: &Path, params: &ParamsKZG<Bn256>) -> Result<ProvingKey<G1Affine>> {
     read_pk(&dir.join("pk.bin"), params)
 }
 
-pub fn load_verifying_key(dir: &Path, params: &ParamsKZG<Bn256>) -> Result<VerifyingKey<Bn256>> {
+pub fn load_verifying_key(dir: &Path, params: &ParamsKZG<Bn256>) -> Result<VerifyingKey<G1Affine>> {
     read_vk(&dir.join("vk.bin"), params)
 }
 
@@ -61,26 +61,26 @@ fn read_params(path: &Path) -> Result<ParamsKZG<Bn256>> {
     Params::read(&mut BufReader::new(file)).context("read params")
 }
 
-fn write_pk(pk: &ProvingKey<Bn256>, path: &Path) -> Result<()> {
+fn write_pk(pk: &ProvingKey<G1Affine>, path: &Path) -> Result<()> {
     let file = File::create(path)?;
     pk.write(&mut BufWriter::new(file), SerdeFormat::RawBytes)
         .context("write pk")
 }
 
-fn read_pk(path: &Path, params: &ParamsKZG<Bn256>) -> Result<ProvingKey<Bn256>> {
+fn read_pk(path: &Path, _params: &ParamsKZG<Bn256>) -> Result<ProvingKey<G1Affine>> {
     let file = File::open(path)?;
-    ProvingKey::read(&mut BufReader::new(file), SerdeFormat::RawBytes, params)
+    ProvingKey::read::<_, TrustMeshCircuit>(&mut BufReader::new(file), SerdeFormat::RawBytes)
         .context("read pk")
 }
 
-fn write_vk(vk: &VerifyingKey<Bn256>, path: &Path) -> Result<()> {
+fn write_vk(vk: &VerifyingKey<G1Affine>, path: &Path) -> Result<()> {
     let file = File::create(path)?;
     vk.write(&mut BufWriter::new(file), SerdeFormat::RawBytes)
         .context("write vk")
 }
 
-fn read_vk(path: &Path, params: &ParamsKZG<Bn256>) -> Result<VerifyingKey<Bn256>> {
+fn read_vk(path: &Path, _params: &ParamsKZG<Bn256>) -> Result<VerifyingKey<G1Affine>> {
     let file = File::open(path)?;
-    VerifyingKey::read(&mut BufReader::new(file), SerdeFormat::RawBytes, params)
+    VerifyingKey::read::<_, TrustMeshCircuit>(&mut BufReader::new(file), SerdeFormat::RawBytes)
         .context("read vk")
 }

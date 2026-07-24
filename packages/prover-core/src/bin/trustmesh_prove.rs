@@ -9,7 +9,7 @@ use trustmesh_prover_core::{
     export_solidity_verifier,
     keys::{load_params, load_proving_key, load_verifying_key, save_keys, setup_keys, KeyMaterial},
     prove::{benchmark, prove, verify_local},
-    types::{BenchmarkReport, ProofArtifacts, SetupReport, VerifyReport, WitnessInput},
+    types::{ProofArtifacts, SetupReport, WitnessInput},
 };
 
 #[derive(Parser)]
@@ -172,7 +172,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn emit<T: serde::Serialize>(json: bool, value: &T) -> Result<()> {
+fn emit<T: serde::Serialize + std::fmt::Debug>(json: bool, value: &T) -> Result<()> {
     if json {
         println!("{}", serde_json::to_string_pretty(value)?);
     } else {

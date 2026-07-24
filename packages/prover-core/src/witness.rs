@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 
 use crate::circuit::{FIXED_POINT_SCALE, HIDDEN_DIM, INPUT_DIM, OUTPUT_DIM};
-use crate::poseidon::{hash_weights, kzg_digest_to_field, public_commitment_field};
+use crate::poseidon::{hash_weights, public_commitment_field};
 use crate::types::WitnessInput;
 
 #[derive(Clone, Debug)]
@@ -22,7 +22,8 @@ pub fn build_witness(input: WitnessInput) -> Result<BuiltWitness> {
     let expected_bps = concentration_bps_from_logits(&native.logits);
     anyhow::ensure!(
         input.post_trade_concentration_bps == expected_bps as u64,
-        "post_trade_concentration_bps {expected} does not match inference {expected_bps}"
+        "post_trade_concentration_bps {} does not match inference {expected_bps}",
+        input.post_trade_concentration_bps
     );
     Ok(BuiltWitness { input, native })
 }

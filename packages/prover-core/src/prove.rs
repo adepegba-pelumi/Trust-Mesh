@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use halo2_proofs::plonk::{create_proof, verify_proof};
 use halo2_proofs::poly::kzg::multiopen::{ProverSHPLONK, VerifierSHPLONK};
 use halo2_proofs::poly::kzg::strategy::SingleStrategy;
+use halo2_proofs::transcript::TranscriptWriterBuffer;
 use halo2_solidity_verifier::Keccak256Transcript;
 use halo2curves::bn256::Fr;
 use rand::rngs::OsRng;
