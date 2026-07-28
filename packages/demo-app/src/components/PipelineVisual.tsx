@@ -1,7 +1,7 @@
 "use client";
 
 import type { PipelineStageId, PipelineState, StageTiming } from "@/types/demo";
-import { outlineButton, sectionLabel } from "@/components/PageShell";
+import { sectionLabelMuted } from "@/lib/design-tokens";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,10 +71,8 @@ export function PipelineVisual({
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 space-y-0">
         <div>
-          <p className={sectionLabel}>live pipeline</p>
-          <CardTitle className="mt-2 text-xl text-zinc-100">
-            Observe → Infer → Prove → Verify → Execute
-          </CardTitle>
+          <p className={sectionLabelMuted}>live pipeline</p>
+          <CardTitle className="mt-2">Observe → Infer → Prove → Verify → Execute</CardTitle>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button disabled={isRunning} onClick={onRunDemo} type="button">
@@ -83,20 +81,14 @@ export function PipelineVisual({
           <Button disabled={isRunning} onClick={onRunUnsafe} type="button" variant="destructive">
             Trigger unsafe transaction
           </Button>
-          <Button
-            className={outlineButton}
-            disabled={isRunning}
-            onClick={onReset}
-            type="button"
-            variant="outline"
-          >
+          <Button disabled={isRunning} onClick={onReset} type="button" variant="outline">
             Reset
           </Button>
         </div>
       </CardHeader>
 
       <CardContent>
-        <ol className="grid gap-3 md:grid-cols-5">
+        <ol aria-label="Pipeline stages" className="grid gap-3 md:grid-cols-5">
           {stageOrder.map((stage) => {
             const active = isStageActive(stage, pipelineState);
             const complete = isStageComplete(stage, pipelineState, stageOrder, stageTimings);
@@ -105,8 +97,9 @@ export function PipelineVisual({
             return (
               <li
                 key={stage}
+                aria-current={active ? "step" : undefined}
                 className={cn(
-                  "relative rounded-xl border p-4 transition-all",
+                  "relative rounded-xl border p-4 transition-all duration-200",
                   active &&
                     "border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_20px_-8px_rgba(52,211,153,0.4)]",
                   !active && complete && "border-emerald-500/20 bg-emerald-500/5",
@@ -116,6 +109,7 @@ export function PipelineVisual({
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold text-zinc-100">{STAGE_LABELS[stage]}</span>
                   <span
+                    aria-hidden
                     className={cn(
                       "h-2.5 w-2.5 rounded-full",
                       active && "animate-pulse bg-emerald-400",
@@ -142,7 +136,7 @@ export function PipelineVisual({
         ) : null}
 
         {pipelineState === "done" ? (
-          <p className="mt-4 text-sm text-emerald-400">
+          <p className="mt-4 text-sm text-emerald-400" role="status">
             Pipeline complete — results recorded on Sepolia and in the audit trail below.
           </p>
         ) : null}

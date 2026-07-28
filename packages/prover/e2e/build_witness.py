@@ -31,18 +31,14 @@ def main() -> None:
 
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from portfolio_model import (
-        allocation_concentration_bps,
         liquidity_to_wei,
         make_portfolio_mlp_weights,
         observe_market,
-        run_inference,
     )
 
     rng = np.random.default_rng(args.rng_seed)
     weights = make_portfolio_mlp_weights(rng)
     market = observe_market(rng)
-    logits = run_inference(weights, market["features"])
-    concentration = allocation_concentration_bps(logits)
     liquidity = args.liquidity_wei or liquidity_to_wei(market["pool_liquidity_eth"])
     digest = commitment_digest(weights)
 
@@ -51,7 +47,7 @@ def main() -> None:
         features=market["features"],
         model_commitment=digest,
         pool_liquidity_wei=liquidity,
-        post_trade_concentration_bps=args.concentration_bps or concentration,
+        post_trade_concentration_bps=args.concentration_bps if args.concentration_bps > 0 else None,
     )
     args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(json.dumps({"witness": str(args.output), "model_commitment": payload["model_commitment"]}))

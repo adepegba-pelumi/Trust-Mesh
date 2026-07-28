@@ -1,7 +1,7 @@
 "use client";
 
 import { sepoliaExplorerAddress } from "@/config/web3";
-import { fieldLabel, linkAccent, sectionLabel, statBox } from "@/components/PageShell";
+import { fieldLabel, linkAccent, sectionLabelMuted, statBox } from "@/lib/design-tokens";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatModelCommitment, formatTimestamp, normalizeCommitment } from "@/lib/format";
@@ -24,8 +24,8 @@ export function AgentStatusCard({
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 space-y-0">
         <div>
-          <p className={sectionLabel}>agent status</p>
-          <CardTitle className="mt-2 text-xl text-zinc-100">TrustMesh Sepolia Agent</CardTitle>
+          <p className={sectionLabelMuted}>agent status</p>
+          <CardTitle className="mt-2">TrustMesh Sepolia Agent</CardTitle>
           <a
             className={"mt-1 inline-block text-sm " + linkAccent}
             href={sepoliaExplorerAddress(agentAddress)}

@@ -5,14 +5,12 @@ import { ArrowRight } from "lucide-react";
 
 import { AppNav } from "@/components/AppNav";
 import { ArchitectureDiagram } from "@/components/ArchitectureDiagram";
-import {
-  PageShell,
-  pageSubtitle,
-  pageTitle,
-  sectionLabel,
-  surfaceCard,
-} from "@/components/PageShell";
+import { PageShell, surfaceCard } from "@/components/PageShell";
+import { NeuralNetworkIllustration } from "@/components/illustrations/NeuralNetworkIllustration";
 import { Button } from "@/components/ui/button";
+import { MotionReveal } from "@/components/ui/motion";
+import { PageHeader } from "@/components/ui/page-header";
+import { cn } from "@/lib/utils";
 
 const sections = [
   {
@@ -74,60 +72,62 @@ export default function AboutPage() {
   return (
     <PageShell>
       <AppNav />
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        <p className={sectionLabel}>about</p>
-        <h1 className={pageTitle}>About TrustMesh</h1>
-        <p className={pageSubtitle}>
-          TrustMesh lets autonomous DeFi agents prove that an inference step satisfied declared
-          safety constraints before a transaction executes on-chain. The design separates model
-          commitment (Stage 1), zero-knowledge proving (Stage 2), and policy enforcement (Stage 3).
-        </p>
+      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-12">
+        <PageHeader
+          description="TrustMesh lets autonomous DeFi agents prove that an inference step satisfied declared safety constraints before a transaction executes on-chain. The design separates model commitment (Stage 1), zero-knowledge proving (Stage 2), and policy enforcement (Stage 3)."
+          label="about"
+          title="About TrustMesh"
+        />
+
+        <div aria-hidden className="pointer-events-none mt-8 opacity-30">
+          <NeuralNetworkIllustration className="h-auto w-full max-h-48" />
+        </div>
 
         <div className="mt-12 space-y-8">
-          {sections.map((section) => (
-            <section className={surfaceCard + " p-8"} key={section.title}>
-              <h2 className="text-lg font-semibold text-zinc-100">{section.title}</h2>
-              {"paragraphs" in section && section.paragraphs ? (
-                <div className="mt-4 space-y-3">
-                  {section.paragraphs.map((p) => (
-                    <p className="text-sm leading-relaxed text-zinc-400" key={p}>
-                      {p}
-                    </p>
-                  ))}
-                </div>
-              ) : null}
-              {"items" in section && section.items ? (
-                <ul className="mt-4 space-y-4">
-                  {section.items.map((item) => (
-                    <li className="flex flex-col gap-1 sm:flex-row sm:gap-3" key={item.label}>
-                      <span className="shrink-0 font-mono text-xs text-emerald-400">{item.label}</span>
-                      <span className="text-sm leading-relaxed text-zinc-400">{item.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </section>
+          {sections.map((section, i) => (
+            <MotionReveal delay={i * 0.04} key={section.title}>
+              <section className={cn(surfaceCard, "p-6 sm:p-8")}>
+                <h2 className="text-lg font-semibold text-zinc-100">{section.title}</h2>
+                {"paragraphs" in section && section.paragraphs ? (
+                  <div className="mt-4 space-y-3">
+                    {section.paragraphs.map((p) => (
+                      <p className="text-sm leading-relaxed text-zinc-400" key={p}>
+                        {p}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+                {"items" in section && section.items ? (
+                  <ul className="mt-4 space-y-4">
+                    {section.items.map((item) => (
+                      <li className="flex flex-col gap-1 sm:flex-row sm:gap-3" key={item.label}>
+                        <span className="shrink-0 font-mono text-xs text-emerald-400">{item.label}</span>
+                        <span className="text-sm leading-relaxed text-zinc-400">{item.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </section>
+            </MotionReveal>
           ))}
 
-          <div className="rounded-2xl border border-emerald-500/15 bg-zinc-900/60 p-2 backdrop-blur">
-            <ArchitectureDiagram compact />
-          </div>
+          <MotionReveal delay={0.24}>
+            <div className="rounded-2xl border border-emerald-500/15 bg-zinc-900/60 p-2 backdrop-blur">
+              <ArchitectureDiagram compact />
+            </div>
+          </MotionReveal>
 
-          <div className="flex flex-wrap gap-3 pt-2">
-            <Button asChild className="bg-emerald-500 text-emerald-950 shadow-[0_0_24px_-6px_rgba(52,211,153,0.6)] hover:bg-emerald-400">
+          <MotionReveal className="flex flex-wrap gap-3 pt-2" delay={0.28}>
+            <Button asChild>
               <Link href="/dashboard">
                 Open demo dashboard
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
             </Button>
-            <Button
-              asChild
-              className="border-zinc-700 bg-transparent text-zinc-200 hover:border-emerald-500/50 hover:bg-emerald-500/5 hover:text-emerald-300"
-              variant="outline"
-            >
+            <Button asChild variant="outline">
               <Link href="/agents">Manage agents</Link>
             </Button>
-          </div>
+          </MotionReveal>
         </div>
       </main>
     </PageShell>

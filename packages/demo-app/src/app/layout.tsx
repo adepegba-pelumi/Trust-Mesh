@@ -9,8 +9,11 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "TrustMesh Demo Dashboard",
+  title: "TrustMesh — Verifiable AI Agents",
   description: "Live Sepolia visualization of the TrustMesh agent verification pipeline",
+  icons: {
+    icon: [{ url: "/favicon.ico", sizes: "any" }],
+  },
 };
 
 export default function RootLayout({

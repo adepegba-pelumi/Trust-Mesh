@@ -35,7 +35,11 @@ from trustmesh_prover.prover.commitment_field import public_commitment_field
 from trustmesh_prover.prover.proof import (
     build_proof_bundle,
 )
-from trustmesh_prover.prover.witness_builder import build_witness_payload, verify_witness_kzg_commitment
+from trustmesh_prover.prover.witness_builder import (
+    build_witness_payload,
+    preview_concentration_bps,
+    verify_witness_kzg_commitment,
+)
 from trustmesh_prover.srs.loader import load_srs
 
 E2E_DIR = Path(__file__).resolve().parent
@@ -44,11 +48,9 @@ if str(E2E_DIR) not in sys.path:
 
 from contract_abi import TRUSTMESH_VERIFIER_ABI  # noqa: E402
 from portfolio_model import (  # noqa: E402
-    allocation_concentration_bps,
     liquidity_to_wei,
     make_portfolio_mlp_weights,
     observe_market,
-    run_inference,
 )
 
 RUN_LOG_PATH = E2E_DIR / "run_log.json"
@@ -216,8 +218,36 @@ def run_happy_path(
     rng = np.random.default_rng(rng_seed)
     record: dict[str, Any] = {"scenario": "happy_path"}
 
+    safety = contract.functions.safetyConfig().call()
+    min_liq, max_bps = safety[0], safety[1]
+
+    weights: dict[str, Any] | None = None
+    market: dict[str, Any] | None = None
+    liquidity_wei = 0
+    concentration_bps = 0
+    for _ in range(128):
+        candidate_weights = make_portfolio_mlp_weights(rng)
+        candidate_market = observe_market(rng)
+        candidate_liquidity = liquidity_to_wei(candidate_market["pool_liquidity_eth"])
+        if candidate_liquidity < min_liq:
+            candidate_liquidity = int(min_liq + WEI)
+        candidate_bps = preview_concentration_bps(
+            candidate_weights,
+            candidate_market["features"],
+        )
+        if candidate_bps <= max_bps:
+            weights = candidate_weights
+            market = candidate_market
+            liquidity_wei = candidate_liquidity
+            concentration_bps = candidate_bps
+            break
+
+    if weights is None or market is None:
+        raise RuntimeError(
+            f"Could not sample model/market with circuit-derived concentration <= {max_bps} bps"
+        )
+
     print("\n=== Step 1–2: Load model, KZG commit, registerAgent ===")
-    weights = make_portfolio_mlp_weights(rng)
     model_commitment, commit_seconds = _commit_model(weights)
     record["commitment_seconds"] = round(commit_seconds, 3)
     record["model_commitment"] = "0x" + model_commitment.hex()
@@ -232,7 +262,6 @@ def run_happy_path(
 
     print("\n=== Step 3–4: Observe market, run inference ===")
     t0 = _stage_start("observing")
-    market = observe_market(rng)
     _stage_complete(
         "observing",
         t0,
@@ -241,24 +270,14 @@ def run_happy_path(
     )
 
     t1 = _stage_start("inferring")
-    logits = run_inference(weights, market["features"])
-    concentration_bps = allocation_concentration_bps(logits)
-    liquidity_wei = liquidity_to_wei(market["pool_liquidity_eth"])
-
-    safety = contract.functions.safetyConfig().call()
-    min_liq, max_bps = safety[0], safety[1]
-    if liquidity_wei < min_liq:
-        liquidity_wei = int(min_liq + WEI)
-    if concentration_bps > max_bps:
-        concentration_bps = int(max_bps - 500)
-
     witness = build_witness_payload(
         weights=weights,
         features=market["features"],
         model_commitment=model_commitment,
         pool_liquidity_wei=liquidity_wei,
-        post_trade_concentration_bps=concentration_bps,
+        post_trade_concentration_bps=None,
     )
+    concentration_bps = int(witness["post_trade_concentration_bps"])
     commitment_field = public_commitment_field(witness)
     record["commitment_field"] = str(commitment_field)
 

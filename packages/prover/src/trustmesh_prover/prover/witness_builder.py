@@ -107,6 +107,25 @@ def concentration_bps_from_logits(logits: list[int]) -> int:
     return int(round(max_weight * 10_000))
 
 
+def preview_concentration_bps(
+    weights: dict[str, np.ndarray],
+    features: np.ndarray,
+) -> int:
+    """Circuit-matching concentration from quantized weights (no KZG / witness I/O)."""
+    q = _quantize_to_i64(weights)
+    payload: dict[str, Any] = {
+        "fc1_weight": q["fc1.weight"],
+        "fc1_bias": q["fc1.bias"],
+        "fc2_weight": q["fc2.weight"],
+        "fc2_bias": q["fc2.bias"],
+        "fc3_weight": q["fc3.weight"],
+        "fc3_bias": q["fc3.bias"],
+        "features": [int(x) for x in features.astype(int).tolist()],
+    }
+    native = compute_native_forward(payload)
+    return concentration_bps_from_logits(native["logits"])
+
+
 def build_witness_payload(
     *,
     weights: dict[str, np.ndarray],
