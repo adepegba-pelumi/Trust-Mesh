@@ -1,7 +1,31 @@
-export default function Home() {
+import { AppNav } from "@/components/AppNav";
+import { CTA } from "@/components/CTA";
+import { Features } from "@/components/Features";
+import { Footer } from "@/components/Footer";
+import { Hero } from "@/components/Hero";
+import { HowItWorks } from "@/components/HowItWorks";
+import { PageShell } from "@/components/PageShell";
+import { SecurityCryptography } from "@/components/SecurityCryptography";
+import { TrustedBy } from "@/components/TrustedBy";
+import { UseCases } from "@/components/UseCases";
+import { WhyTrustMesh } from "@/components/WhyTrustMesh";
+
+
+export default function LandingPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <h1 className="text-2xl font-semibold">TrustMesh</h1>
-    </main>
+    <PageShell>
+      <AppNav />
+      <main>
+        <Hero />
+        <TrustedBy />
+        <Features />
+        <HowItWorks />
+        <WhyTrustMesh />
+        <SecurityCryptography />
+        <UseCases />
+        <CTA />
+      </main>
+      <Footer />
+    </PageShell>
   );
 }

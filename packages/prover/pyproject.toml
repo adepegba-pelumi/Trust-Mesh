@@ -10,13 +10,22 @@ dependencies = [
     "numpy>=1.26",
     "py-ecc>=7.0",
     "requests>=2.31",
+    "eth-abi>=5.0",
 ]
 
 [project.optional-dependencies]
+e2e = [
+    "web3>=7.0",
+    "eth-account>=0.13",
+    "python-dotenv>=1.0",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=4.0",
     "ruff>=0.4",
+    "web3>=7.0",
+    "eth-account>=0.13",
+    "python-dotenv>=1.0",
 ]
 
 [build-system]

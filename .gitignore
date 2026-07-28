@@ -51,6 +51,10 @@ packages/contracts/cache/
 packages/contracts/out/
 packages/contracts/broadcast/
 packages/contracts/lib/
+/packages/demo-app/.env.local
+/packages/demo-app/.env
+/packages/contracts/.env
+
 
 # IDE
 .idea/
@@ -78,6 +82,7 @@ desktop.ini
 .env
 .env.*
 !.env.example
+packages/prover/e2e/run_log.json
 *.pem
 *.key
 secrets/
@@ -88,3 +93,11 @@ secrets/
 *.temp
 coverage/
 .nyc_output/
+
+# Generated ZK artifacts (produced by scripts/build_zk_artifacts.sh)
+packages/prover-core/keys/
+packages/contracts/src/generated/Halo2Verifier.sol
+packages/contracts/test/fixtures/*.json
+!packages/contracts/test/fixtures/.gitkeep
+packages/prover/tests/fixtures/*.json
+!packages/prover/tests/fixtures/.gitkeep

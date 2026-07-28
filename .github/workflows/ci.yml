@@ -2,18 +2,47 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  zk-artifacts:
+    name: ZK artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/prover-core
+
+      - name: Build ZK artifacts
+        run: bash scripts/build_zk_artifacts.sh
+
+      - name: Upload ZK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zk-artifacts
+          if-no-files-found: error
+          path: |
+            packages/prover-core/keys/
+            packages/contracts/src/generated/
+            packages/contracts/test/fixtures/
+            packages/prover/tests/fixtures/
+
   python:
     name: Python (${{ matrix.package }})
     runs-on: ubuntu-latest
+    needs: zk-artifacts
     strategy:
       fail-fast: false
       matrix:
@@ -23,6 +52,12 @@ jobs:
         working-directory: packages/${{ matrix.package }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download ZK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: zk-artifacts
+          path: .
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -41,12 +76,15 @@ jobs:
       - name: Format check
         run: uv run ruff format --check .
 
-      - name: Test
-        run: uv run pytest
+      - name: Test with coverage
+        env:
+          TRUSTMESH_ALLOW_FIXTURES: "true"
+        run: uv run pytest --cov --cov-report=term-missing
 
   contracts:
     name: Foundry
     runs-on: ubuntu-latest
+    needs: zk-artifacts
     defaults:
       run:
         working-directory: packages/contracts
@@ -54,6 +92,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Download ZK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: zk-artifacts
+          path: .
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
@@ -66,7 +110,48 @@ jobs:
         run: forge build
 
       - name: Test
-        run: forge test
+        run: forge test -vv
+
+      - name: Gas report
+        run: forge test --gas-report
+
+  prover-core:
+    name: Halo2 prover-core
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/prover-core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/prover-core
+
+      - name: cargo check
+        run: cargo check --all-targets
+
+      - name: cargo test
+        run: cargo test
+
+      - name: Release benchmark
+        run: |
+          cargo build --release
+          ./target/release/trustmesh-prove setup --output /tmp/trustmesh-keys --json
+          ./target/release/trustmesh-prove benchmark \
+            --witness fixtures/sample_witness.json \
+            --keys /tmp/trustmesh-keys \
+            --json | tee /tmp/benchmark.json
+
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prover-core-benchmark
+          path: /tmp/benchmark.json
 
   demo-app:
     name: Next.js
@@ -89,6 +174,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Unit tests
+        run: npm run test
 
       - name: Build
         run: npm run build
