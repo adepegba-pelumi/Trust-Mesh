@@ -11,6 +11,7 @@ use halo2_proofs::poly::kzg::commitment::ParamsKZG;
 use halo2curves::bn256::{Bn256, G1Affine};
 
 use crate::circuit::{circuit_params, TrustMeshCircuit};
+use crate::witness::keygen_witness;
 
 pub struct KeyMaterial {
     pub params: ParamsKZG<Bn256>,
@@ -21,9 +22,9 @@ pub struct KeyMaterial {
 pub fn setup_keys() -> Result<KeyMaterial> {
     let k = circuit_params().k;
     let params = ParamsKZG::<Bn256>::new(k);
-    let empty = TrustMeshCircuit::default();
-    let vk = keygen_vk(&params, &empty).context("keygen vk")?;
-    let pk = keygen_pk(&params, vk.clone(), &empty).context("keygen pk")?;
+    let keygen_circuit = TrustMeshCircuit::new(keygen_witness());
+    let vk = keygen_vk(&params, &keygen_circuit).context("keygen vk")?;
+    let pk = keygen_pk(&params, vk.clone(), &keygen_circuit).context("keygen pk")?;
     Ok(KeyMaterial { params, pk, vk })
 }
 

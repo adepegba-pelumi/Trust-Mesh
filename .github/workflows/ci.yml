@@ -104,7 +104,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts --no-commit
+          forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts
 
       - name: Build
         run: forge build

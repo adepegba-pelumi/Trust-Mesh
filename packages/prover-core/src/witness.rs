@@ -63,6 +63,27 @@ pub fn compute_native_forward(witness: &WitnessInput) -> NativeForward {
     }
 }
 
+/// Dimension-valid witness for Halo2 keygen (synthesize requires a populated witness).
+pub fn keygen_witness() -> WitnessInput {
+    let witness = WitnessInput {
+        fc1_weight: vec![0; HIDDEN_DIM * INPUT_DIM],
+        fc1_bias: vec![0; HIDDEN_DIM],
+        fc2_weight: vec![0; HIDDEN_DIM * HIDDEN_DIM],
+        fc2_bias: vec![0; HIDDEN_DIM],
+        fc3_weight: vec![0; OUTPUT_DIM * HIDDEN_DIM],
+        fc3_bias: vec![0; OUTPUT_DIM],
+        features: vec![0; INPUT_DIM],
+        model_commitment: [0u8; 32],
+        pool_liquidity_wei: 0,
+        post_trade_concentration_bps: 0,
+    };
+    let native = compute_native_forward(&witness);
+    WitnessInput {
+        post_trade_concentration_bps: concentration_bps_from_logits(&native.logits) as u64,
+        ..witness
+    }
+}
+
 pub fn concentration_bps_from_logits(logits: &[i64]) -> u32 {
     let max_logit = *logits.iter().max().unwrap_or(&0);
     let exp_sum: f64 = logits
