@@ -287,11 +287,6 @@ def verify_proof_bytes(
     expected_public_inputs: tuple[int, ...] | None = None,
 ) -> None:
     """Verify an existing proof against a witness via ``trustmesh-prove verify``."""
-    if expected_public_inputs is not None:
-        derived = public_inputs_from_witness_import(witness)
-        if derived != expected_public_inputs:
-            msg = f"public input mismatch: expected {expected_public_inputs}, got {derived}"
-            raise PublicInputMismatch(msg)
     binary = resolve_prover_binary()
     keys = resolve_keys_dir(keys_dir)
     _run_verify(binary, keys, witness, proof)

@@ -23,7 +23,7 @@ from trustmesh_prover.prover.witness_builder import (
 )
 
 TARGET = "0x4d871E1Dd2193769b4634a27582be18A2962b38c"
-FIXTURE_COMMITMENT = bytes.fromhex("07" * 32)
+from conftest import FIXTURE_COMMITMENT
 
 
 def test_public_inputs_from_market_requires_three_inputs() -> None:

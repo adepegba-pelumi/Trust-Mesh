@@ -36,8 +36,8 @@ from trustmesh_prover.prover.proof import (
     build_proof_bundle,
 )
 from trustmesh_prover.prover.witness_builder import (
-    build_witness_payload,
-    preview_concentration_bps,
+    compute_native_forward,
+    concentration_bps_from_logits,
     verify_witness_kzg_commitment,
 )
 from trustmesh_prover.srs.loader import load_srs
@@ -49,7 +49,8 @@ if str(E2E_DIR) not in sys.path:
 from contract_abi import TRUSTMESH_VERIFIER_ABI  # noqa: E402
 from portfolio_model import (  # noqa: E402
     liquidity_to_wei,
-    make_portfolio_mlp_weights,
+    load_balanced_demo_witness,
+    make_balanced_demo_mlp_weights,
     observe_market,
 )
 
@@ -221,30 +222,17 @@ def run_happy_path(
     safety = contract.functions.safetyConfig().call()
     min_liq, max_bps = safety[0], safety[1]
 
-    weights: dict[str, Any] | None = None
-    market: dict[str, Any] | None = None
-    liquidity_wei = 0
-    concentration_bps = 0
-    for _ in range(128):
-        candidate_weights = make_portfolio_mlp_weights(rng)
-        candidate_market = observe_market(rng)
-        candidate_liquidity = liquidity_to_wei(candidate_market["pool_liquidity_eth"])
-        if candidate_liquidity < min_liq:
-            candidate_liquidity = int(min_liq + WEI)
-        candidate_bps = preview_concentration_bps(
-            candidate_weights,
-            candidate_market["features"],
-        )
-        if candidate_bps <= max_bps:
-            weights = candidate_weights
-            market = candidate_market
-            liquidity_wei = candidate_liquidity
-            concentration_bps = candidate_bps
-            break
+    weights = make_balanced_demo_mlp_weights()
+    market = observe_market(rng)
+    liquidity_wei = liquidity_to_wei(market["pool_liquidity_eth"])
+    if liquidity_wei < min_liq:
+        liquidity_wei = int(min_liq + WEI)
 
-    if weights is None or market is None:
+    demo_witness = load_balanced_demo_witness()
+    concentration_bps = int(demo_witness["post_trade_concentration_bps"])
+    if concentration_bps > max_bps:
         raise RuntimeError(
-            f"Could not sample model/market with circuit-derived concentration <= {max_bps} bps"
+            f"Balanced demo model concentration {concentration_bps} bps exceeds cap {max_bps} bps"
         )
 
     print("\n=== Step 1–2: Load model, KZG commit, registerAgent ===")
@@ -270,14 +258,16 @@ def run_happy_path(
     )
 
     t1 = _stage_start("inferring")
-    witness = build_witness_payload(
-        weights=weights,
-        features=market["features"],
-        model_commitment=model_commitment,
-        pool_liquidity_wei=liquidity_wei,
-        post_trade_concentration_bps=None,
-    )
-    concentration_bps = int(witness["post_trade_concentration_bps"])
+    witness = dict(demo_witness)
+    witness["pool_liquidity_wei"] = str(liquidity_wei)
+    verify_witness_kzg_commitment(witness, model_commitment)
+    native = compute_native_forward(witness)
+    circuit_bps = concentration_bps_from_logits(native["logits"])
+    if circuit_bps != concentration_bps:
+        raise RuntimeError(
+            f"Fixture concentration {concentration_bps} bps "
+            f"does not match circuit preview {circuit_bps} bps"
+        )
     commitment_field = public_commitment_field(witness)
     record["commitment_field"] = str(commitment_field)
 

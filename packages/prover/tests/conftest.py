@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
@@ -9,6 +10,14 @@ import pytest
 
 FIXTURE_BUNDLE = Path(__file__).resolve().parent / "fixtures" / "proof_bundle.json"
 FIXTURE_WITNESS = Path(__file__).resolve().parent / "fixtures" / "witness.json"
+
+
+def load_fixture_commitment() -> bytes:
+    witness = json.loads(FIXTURE_WITNESS.read_text(encoding="utf-8"))
+    return bytes.fromhex(str(witness["model_commitment"]).removeprefix("0x"))
+
+
+FIXTURE_COMMITMENT = load_fixture_commitment()
 
 
 @pytest.fixture(scope="session", autouse=True)

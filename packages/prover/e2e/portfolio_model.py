@@ -6,12 +6,21 @@ only to exercise the register → infer → prove → verify pipeline from the s
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 
 # Must match packages/prover-core/src/circuit.rs (Stage 6.75 Halo2 circuit).
 INPUT_DIM = 4
 HIDDEN_DIM = 8
 OUTPUT_DIM = 4  # four-asset allocation logits
+
+# Circuit-valid balanced witness (3002 bps); matches prover-core/fixtures/sample_witness.json.
+_BALANCED_DEMO_WITNESS_PATH = (
+    Path(__file__).resolve().parents[2] / "prover-core" / "fixtures" / "sample_witness.json"
+)
 
 
 def make_portfolio_mlp_weights(
@@ -26,6 +35,21 @@ def make_portfolio_mlp_weights(
         "fc3.weight": (rng.standard_normal((OUTPUT_DIM, HIDDEN_DIM)).astype(np.float32) * scale),
         "fc3.bias": (rng.standard_normal(OUTPUT_DIM).astype(np.float32) * scale * 0.1),
     }
+
+
+def make_balanced_demo_mlp_weights() -> dict[str, np.ndarray]:
+    """Deterministic balanced demo weights (fixture-scale integers, ~3002 bps concentration)."""
+    from trustmesh_prover.prover.witness_builder import weights_from_witness
+
+    return weights_from_witness(load_balanced_demo_witness())
+
+
+def load_balanced_demo_witness() -> dict[str, Any]:
+    """Load the circuit-valid balanced witness used for happy-path Sepolia demos."""
+    if not _BALANCED_DEMO_WITNESS_PATH.is_file():
+        msg = f"balanced demo witness missing: {_BALANCED_DEMO_WITNESS_PATH}"
+        raise FileNotFoundError(msg)
+    return json.loads(_BALANCED_DEMO_WITNESS_PATH.read_text(encoding="utf-8"))
 
 
 def observe_market(rng: np.random.Generator) -> dict[str, float | np.ndarray]:

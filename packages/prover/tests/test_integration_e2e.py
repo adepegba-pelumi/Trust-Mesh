@@ -10,7 +10,7 @@ from trustmesh_prover.prover.proof import build_proof_bundle, verify_proof
 
 AGENT = "0x8aff698EBd8d18B3A5dd2bDFb6E2A2196e489994"
 TARGET = "0x4d871E1Dd2193769b4634a27582be18A2962b38c"
-FIXTURE_COMMITMENT = bytes.fromhex("07" * 32)
+from conftest import FIXTURE_COMMITMENT
 
 
 @dataclass

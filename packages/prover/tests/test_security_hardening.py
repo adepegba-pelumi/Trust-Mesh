@@ -26,7 +26,7 @@ from trustmesh_prover.prover.witness_builder import (
 )
 
 TARGET = "0x4d871E1Dd2193769b4634a27582be18A2962b38c"
-FIXTURE_COMMITMENT = bytes.fromhex("07" * 32)
+from conftest import FIXTURE_COMMITMENT
 
 
 def test_fixtures_disabled_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -116,7 +116,7 @@ def test_build_proof_bundle_rejects_market_mismatch(require_halo2_fixtures: None
 def test_invalid_witness_rejected_before_proving(require_halo2_fixtures: None) -> None:
     witness = load_fixture_witness()
     witness["post_trade_concentration_bps"] = 9_999
-    with pytest.raises(ValueError, match="does not match inference"):
+    with pytest.raises(RuntimeError, match="does not match inference"):
         build_proof_bundle(
             int(witness["pool_liquidity_wei"]),
             9_999,
