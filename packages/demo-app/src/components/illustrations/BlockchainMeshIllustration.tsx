@@ -27,16 +27,16 @@ export function BlockchainMeshIllustration({ className }: BlockchainMeshIllustra
     >
       <defs>
         <linearGradient id="chain-line" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#34d399" stopOpacity="0" />
-          <stop offset="50%" stopColor="#34d399" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+          <stop offset="0%" stopColor="#2FAE6E" stopOpacity="0" />
+          <stop offset="50%" stopColor="#2FAE6E" stopOpacity="0.7" />
+          <stop offset="100%" stopColor="#2FAE6E" stopOpacity="0" />
         </linearGradient>
       </defs>
 
       {chainNodes.slice(0, -1).map((node, i) => (
         <line
           key={i}
-          stroke="#27272a"
+          stroke="#D8D5CC"
           strokeWidth="1.5"
           x1={node.x + 20}
           x2={chainNodes[i + 1].x - 20}
@@ -61,23 +61,36 @@ export function BlockchainMeshIllustration({ className }: BlockchainMeshIllustra
       {chainNodes.map((node, i) => (
         <g key={i}>
           <rect
-            fill="#18181b"
+            fill={i === 2 ? "#E8F5EE" : "#FFFFFF"}
             height="40"
-            rx="8"
-            stroke="#34d399"
-            strokeOpacity={i === 2 ? 0.6 : 0.25}
-            strokeWidth="1"
+            rx="10"
+            stroke="#2FAE6E"
+            strokeOpacity={i === 2 ? 0.55 : 0.28}
+            strokeWidth="1.5"
             width="40"
             x={node.x - 20}
             y={node.y - 20}
           />
-          <text fill="#71717a" fontFamily="monospace" fontSize="8" textAnchor="middle" x={node.x} y={node.y + 4}>
+          <text
+            fill="#6B6B66"
+            fontFamily="var(--font-sans), system-ui, sans-serif"
+            fontSize="8"
+            textAnchor="middle"
+            x={node.x}
+            y={node.y + 4}
+          >
             {i + 1}
           </text>
         </g>
       ))}
 
-      <text fill="#71717a" fontFamily="monospace" fontSize="10" x="24" y="220">
+      <text
+        fill="#6B6B66"
+        fontFamily="var(--font-sans), system-ui, sans-serif"
+        fontSize="10"
+        x="24"
+        y="220"
+      >
         sepolia · on-chain verification
       </text>
     </svg>

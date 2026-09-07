@@ -27,6 +27,10 @@ function pickConnector(
   return injected ?? connectors[0] ?? null;
 }
 
+function shortenAddress(address: string) {
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
+
 export function WalletConnect() {
   const { address, isConnected, chain } = useAccount();
   const connectors = useConnectors();
@@ -68,7 +72,6 @@ export function WalletConnect() {
       return;
     }
 
-    // Prefer injected when available; otherwise WalletConnect (mobile + desktop QR).
     if (!injectedAvailable && connector.type !== "walletConnect") {
       if (!isWalletConnectConfigured()) {
         setLocalError(
@@ -85,13 +88,14 @@ export function WalletConnect() {
 
   if (isConnected && address) {
     return (
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="text-right">
-          <p className="font-mono text-xs text-zinc-400">{address}</p>
-          <Badge className="mt-1" variant="success">
-            {chain?.name ?? "Unknown network"}
-          </Badge>
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center rounded-full border border-[#EAEAEC] px-2.5 py-1 font-mono text-xs text-[#6E6E76]">
+          {shortenAddress(address)}
+        </span>
+        <Badge variant="network">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#22C55E]" aria-hidden />
+          {chain?.name ?? "Unknown"}
+        </Badge>
         <Button onClick={() => disconnect()} size="sm" type="button" variant="outline">
           Disconnect
         </Button>
@@ -103,19 +107,23 @@ export function WalletConnect() {
 
   return (
     <div className="flex flex-col items-end gap-2">
-      {hint ? (
-        <p className="max-w-xs text-right text-xs text-zinc-500">{hint}</p>
-      ) : null}
+      {hint ? <p className="max-w-xs text-right text-xs text-[#6E6E76]">{hint}</p> : null}
       {metamaskLink && !isWalletConnectConfigured() ? (
         <a
-          className="max-w-xs text-right text-xs text-emerald-400 hover:text-emerald-300 hover:underline"
+          className="max-w-xs text-right text-xs text-[#111111] hover:underline"
           href={metamaskLink}
           rel="noreferrer"
         >
           Open in MetaMask app
         </a>
       ) : null}
-      <Button disabled={isPending} onClick={() => void handleConnect()} size="sm" type="button">
+      <Button
+        disabled={isPending}
+        onClick={() => void handleConnect()}
+        size="sm"
+        type="button"
+        variant="outline"
+      >
         {isPending ? "Connecting…" : "Connect Wallet"}
       </Button>
       {displayError ? (

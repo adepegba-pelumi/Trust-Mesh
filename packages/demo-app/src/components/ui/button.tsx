@@ -5,24 +5,25 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111]/20 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default:
-          "bg-emerald-500 text-emerald-950 shadow-[0_0_20px_-6px_rgba(52,211,153,0.5)] hover:bg-emerald-400",
+        default: "bg-[#111111] text-white hover:bg-[#111111]/90",
         destructive:
-          "border border-red-500/30 bg-red-500/10 text-red-300 shadow-sm hover:bg-red-500/20",
+          "border border-[#EF4444] bg-white text-[#EF4444] hover:bg-[#EF4444]/5",
         outline:
-          "border border-zinc-700 bg-transparent text-zinc-200 shadow-sm hover:border-emerald-500/50 hover:bg-emerald-500/5 hover:text-emerald-300",
-        secondary: "border border-zinc-800 bg-zinc-900 text-zinc-200 shadow-sm hover:bg-zinc-800",
-        ghost: "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100",
-        link: "text-emerald-400 underline-offset-4 hover:text-emerald-300 hover:underline",
+          "border border-[#111111] bg-white text-[#111111] hover:bg-[#F7F7F8]",
+        secondary:
+          "border border-[#EAEAEC] bg-white text-[#6E6E76] hover:bg-[#F7F7F8] hover:text-[#111111]",
+        ghost: "text-[#6E6E76] hover:bg-[#F7F7F8] hover:text-[#111111]",
+        link: "text-[#111111] underline-offset-4 hover:underline",
+        success: "bg-[#22C55E] text-white hover:bg-[#16A34A]",
       },
       size: {
         default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-11 rounded-md px-8 text-base",
+        sm: "h-8 rounded-lg px-3.5 text-xs",
+        lg: "h-11 rounded-lg px-8 text-base",
         icon: "h-9 w-9",
       },
     },
@@ -43,7 +44,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      <Comp className={cn(buttonVariants({ variant, size }), className)} ref={ref} {...props} />
     );
   },
 );

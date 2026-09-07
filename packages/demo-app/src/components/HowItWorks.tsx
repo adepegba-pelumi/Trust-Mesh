@@ -1,7 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
+
+import Image from "next/image";
 
 const steps = [
   {
@@ -34,19 +35,19 @@ export function HowItWorks() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <section id="how-it-works" className="border-t border-zinc-900 bg-zinc-950/40">
+    <section id="how-it-works" className="bg-[#2FAE6E]">
       <div className="mx-auto max-w-6xl px-6 py-28">
         <div className="text-center">
-          <p className="font-mono text-xs uppercase tracking-widest text-emerald-500">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/80">
             end to end
           </p>
-          <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
+          <h2 className="mt-4 font-display text-balance text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             From commitment to on-chain proof.
           </h2>
         </div>
 
         <div className="mt-16 grid gap-14 lg:grid-cols-[0.95fr_1.05fr] lg:items-start lg:gap-10">
-          <ol className="relative space-y-10 border-l border-zinc-800 pl-10">
+          <ol className="relative space-y-10 border-l border-white/25 pl-10">
             {steps.map((step, i) => (
               <motion.li
                 key={step.title}
@@ -56,20 +57,17 @@ export function HowItWorks() {
                 transition={{ delay: i * 0.05, duration: 0.45 }}
                 className="relative"
               >
-                <span className="absolute -left-[3.15rem] flex h-9 w-9 items-center justify-center rounded-full border border-emerald-500/30 bg-zinc-950 font-mono text-xs text-emerald-400">
+                <span className="absolute -left-[3.15rem] flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-xs font-semibold text-white">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="text-base font-semibold text-zinc-100">
-                  {step.title}
-                </h3>
-                <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-zinc-400">
+                <h3 className="text-base font-semibold text-white">{step.title}</h3>
+                <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-white/80">
                   {step.body}
                 </p>
               </motion.li>
             ))}
           </ol>
 
-          {/* agent ecosystem centerpiece */}
           <motion.div
             initial={{ opacity: 0, y: 24, scale: 0.97 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
@@ -78,19 +76,17 @@ export function HowItWorks() {
             className="lg:sticky lg:top-28"
           >
             <div className="relative">
-              <div className="pointer-events-none absolute inset-0 -z-10 scale-105 rounded-full bg-emerald-500/10 blur-[80px]" />
               <motion.div
                 animate={reduceMotion ? undefined : { y: [0, -8, 0] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                className="relative aspect-[1376/768] overflow-hidden rounded-2xl border border-emerald-500/15 bg-zinc-950/60 shadow-[0_0_60px_-24px_rgba(16,185,129,0.35)]"
+                className="relative overflow-hidden rounded-2xl border border-white/20 bg-white p-6 shadow-soft sm:p-8"
               >
                 <Image
-                  alt="A network of distributed AI agents, each verified through TrustMesh's central proof engine, illustrating how agent decisions connect to on-chain verification"
-                  src="/images/agent-ecosystem.png"
-                  fill
-                  loading="lazy"
-                  sizes="(min-width: 1024px) 46vw, 92vw"
-                  className="object-cover"
+                  alt="TrustMesh agent network from commitment to on-chain proof"
+                  className="h-auto w-full object-cover"
+                  height={480}
+                  src="/images/hero-network101.png"
+                  width={720}
                 />
               </motion.div>
             </div>

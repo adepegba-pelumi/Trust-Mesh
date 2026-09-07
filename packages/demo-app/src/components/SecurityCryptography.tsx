@@ -1,8 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { Fingerprint, ShieldCheck, Sigma } from "lucide-react";
+
+import Image from "next/image";
 
 const stages = [
   {
@@ -25,32 +26,76 @@ const stages = [
   },
 ];
 
-const snippet = `function verifyAndExecute(
-    bytes calldata proof,
-    bytes32 commitment,
-    Action calldata action
-) external {
-    require(
-        halo2Verifier.verify(proof, commitment, action.publicInputs),
-        "invalid proof"
-    );
-    safetyInterceptor.check(action);
-    _execute(action);
-    emit VerifiedDecision(commitment, action.hash());
-}`;
+function CodeSnippet() {
+  return (
+    <pre className="overflow-x-auto px-5 py-5 font-mono text-[13px] leading-relaxed">
+      <code>
+        <span className="text-[#7B6BA8]">function</span>{" "}
+        <span className="text-brand-accent">verifyAndExecute</span>
+        <span className="text-brand-charcoal">(</span>
+        {"\n"}
+        {"    "}
+        <span className="text-[#7B6BA8]">bytes</span>{" "}
+        <span className="text-[#7B6BA8]">calldata</span>{" "}
+        <span className="text-brand-charcoal">proof,</span>
+        {"\n"}
+        {"    "}
+        <span className="text-[#7B6BA8]">bytes32</span>{" "}
+        <span className="text-brand-charcoal">commitment,</span>
+        {"\n"}
+        {"    "}
+        <span className="text-[#7B6BA8]">Action</span>{" "}
+        <span className="text-[#7B6BA8]">calldata</span>{" "}
+        <span className="text-brand-charcoal">action</span>
+        {"\n"}
+        <span className="text-brand-charcoal">) </span>
+        <span className="text-[#7B6BA8]">external</span>{" "}
+        <span className="text-brand-charcoal">{"{"}</span>
+        {"\n"}
+        {"    "}
+        <span className="text-[#7B6BA8]">require</span>
+        <span className="text-brand-charcoal">(</span>
+        {"\n"}
+        {"        "}
+        <span className="text-brand-charcoal">halo2Verifier.</span>
+        <span className="text-brand-accent">verify</span>
+        <span className="text-brand-charcoal">(proof, commitment, action.publicInputs),</span>
+        {"\n"}
+        {"        "}
+        <span className="text-[#C4873A]">&quot;invalid proof&quot;</span>
+        {"\n"}
+        {"    "}
+        <span className="text-brand-charcoal">);</span>
+        {"\n"}
+        {"    "}
+        <span className="text-brand-charcoal">safetyInterceptor.</span>
+        <span className="text-brand-accent">check</span>
+        <span className="text-brand-charcoal">(action);</span>
+        {"\n"}
+        {"    "}
+        <span className="text-brand-accent">_execute</span>
+        <span className="text-brand-charcoal">(action);</span>
+        {"\n"}
+        {"    "}
+        <span className="text-[#7B6BA8]">emit</span>{" "}
+        <span className="text-brand-accent">VerifiedDecision</span>
+        <span className="text-brand-charcoal">(commitment, action.hash());</span>
+        {"\n"}
+        <span className="text-brand-charcoal">{"}"}</span>
+      </code>
+    </pre>
+  );
+}
 
 export function SecurityCryptography() {
   return (
-    <section
-      id="security"
-      className="border-t border-zinc-900 bg-zinc-950/40"
-    >
+    <section id="security" className="bg-white">
       <div className="mx-auto max-w-6xl px-6 py-28">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-xs uppercase tracking-widest text-emerald-500">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-accent">
             security & cryptography
           </p>
-          <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
+          <h2 className="mt-4 font-display text-balance text-3xl font-semibold tracking-tight text-brand-charcoal sm:text-4xl">
             Nothing to trust. Everything to verify.
           </h2>
         </div>
@@ -60,19 +105,19 @@ export function SecurityCryptography() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6 }}
-          className="relative mx-auto mt-14 aspect-[1376/768] w-full max-w-3xl overflow-hidden rounded-2xl border border-emerald-500/15 bg-zinc-950/60 shadow-[0_0_60px_-24px_rgba(16,185,129,0.35)]"
+          className="relative mx-auto mt-14 w-full max-w-3xl overflow-hidden rounded-2xl border border-brand-border bg-white shadow-soft"
         >
           <Image
-            alt="A shield-shaped verification core processing encrypted, hashed, and signed data into a zero-knowledge proof, illustrating how TrustMesh verifies inference without revealing the underlying model"
+            alt="Zero-knowledge verification and cryptographic security"
+            className="h-auto w-full object-cover"
+            height={560}
+            priority={false}
             src="/images/zk-verification.png"
-            fill
-            loading="lazy"
-            sizes="(min-width: 1024px) 768px, 92vw"
-            className="object-cover"
+            width={960}
           />
         </motion.div>
 
-        <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-800 md:grid-cols-3">
+        <div className="mt-14 grid gap-4 md:grid-cols-3">
           {stages.map((stage, i) => (
             <motion.div
               key={stage.index}
@@ -80,20 +125,16 @@ export function SecurityCryptography() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, duration: 0.5 }}
-              className="group relative bg-zinc-950 p-7 transition-colors hover:bg-zinc-900/80"
+              className="group relative rounded-2xl border border-brand-border bg-white p-7 shadow-soft transition-all hover:shadow-soft-lg"
             >
-              <span className="absolute right-5 top-5 font-mono text-4xl font-semibold text-zinc-800 transition-colors group-hover:text-emerald-500/20">
+              <span className="absolute right-5 top-5 text-4xl font-semibold text-brand-mint transition-colors group-hover:text-brand-accent/20">
                 {stage.index}
               </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-mint text-brand-accent">
                 <stage.icon className="h-5 w-5" />
               </div>
-              <h3 className="mt-5 text-base font-semibold text-zinc-100">
-                {stage.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                {stage.body}
-              </p>
+              <h3 className="mt-5 text-base font-semibold text-brand-charcoal">{stage.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-brand-muted">{stage.body}</p>
             </motion.div>
           ))}
         </div>
@@ -103,21 +144,17 @@ export function SecurityCryptography() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mt-6 overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-950"
+          className="mt-6 overflow-hidden rounded-2xl border border-brand-border bg-white shadow-soft"
         >
-          <div className="flex items-center justify-between border-b border-zinc-800/80 px-5 py-3">
-            <span className="font-mono text-xs text-zinc-500">
-              TrustMeshVerifier.sol
-            </span>
+          <div className="flex items-center justify-between border-b border-brand-border bg-brand-soft/60 px-5 py-3">
+            <span className="font-mono text-xs text-brand-muted">TrustMeshVerifier.sol</span>
             <span className="flex gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-zinc-800" />
-              <span className="h-2.5 w-2.5 rounded-full bg-zinc-800" />
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/50" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#F5C6C6]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#F5E0B0]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#B8E0C8]" />
             </span>
           </div>
-          <pre className="overflow-x-auto px-5 py-5 font-mono text-[13px] leading-relaxed text-zinc-300">
-            <code>{snippet}</code>
-          </pre>
+          <CodeSnippet />
         </motion.div>
       </div>
     </section>

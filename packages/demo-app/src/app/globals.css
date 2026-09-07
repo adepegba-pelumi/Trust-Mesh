@@ -4,41 +4,53 @@
 
 @layer base {
   :root {
-    --background: 240 6% 4%;
-    --foreground: 0 0% 98%;
-    --card: 240 4% 10%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 4% 10%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 160 84% 39%;
-    --primary-foreground: 165 100% 8%;
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 160 30% 12%;
-    --accent-foreground: 152 76% 80%;
-    --destructive: 0 62.8% 45%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 160 84% 39%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+    --primary: 0 0% 7%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 0 0% 7%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 5% 92%;
+    --input: 240 5% 92%;
+    --ring: 0 0% 7%;
     --radius: 0.75rem;
-  }
-}
 
-@layer base {
+    /* Brand tokens — monochrome + single green accent */
+    --brand-cream: #ffffff;
+    --brand-soft: #ffffff;
+    --brand-charcoal: #111111;
+    --brand-muted: #6e6e76;
+    --brand-accent: #22c55e;
+    --brand-mint: #eafbf1;
+    --brand-border: #eaeaec;
+  }
+
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-zinc-950 text-zinc-100 antialiased;
+    background-color: #ffffff;
+    color: #111111;
+    @apply antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-zinc-950;
+    outline: none;
+    box-shadow:
+      0 0 0 2px #ffffff,
+      0 0 0 4px rgba(17, 17, 17, 0.2);
   }
 }
 

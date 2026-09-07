@@ -6,24 +6,17 @@ import { ArrowRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { MotionReveal } from "@/components/ui/motion";
-import { surfaceCard } from "@/lib/design-tokens";
 
 export function CTA() {
   return (
-    <section className="py-20 sm:py-24">
+    <section className="bg-white py-20 sm:py-24">
       <Container>
         <MotionReveal>
-          <div
-            className={`relative overflow-hidden px-6 py-14 text-center sm:px-16 sm:py-16 ${surfaceCard}`}
-          >
-            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-              <div className="absolute left-1/2 top-1/2 h-[360px] w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/[0.08] blur-[100px]" />
-            </div>
-
-            <h2 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
+          <div className="relative overflow-hidden rounded-3xl border border-[#EDEBE4] bg-white px-6 py-14 text-center shadow-soft sm:px-16 sm:py-16">
+            <h2 className="font-display text-balance text-3xl font-semibold tracking-tight text-[#2A2A28] sm:text-4xl">
               Ship AI agents people can actually verify.
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-balance text-zinc-400">
+            <p className="mx-auto mt-4 max-w-lg text-balance leading-relaxed text-[#6B6B66]">
               Register your first model commitment and get a working verifier on Sepolia in an
               afternoon.
             </p>

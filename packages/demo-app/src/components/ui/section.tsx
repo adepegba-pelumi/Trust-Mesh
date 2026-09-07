@@ -3,7 +3,12 @@
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 
-import { sectionDescription, sectionLabel, sectionSpacing, sectionTitle } from "@/lib/design-tokens";
+import {
+  sectionDescription,
+  sectionLabel,
+  sectionSpacing,
+  sectionTitle,
+} from "@/lib/design-tokens";
 import { useMotionVariants, viewportOnce } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -30,8 +35,8 @@ export function Section({
     <section
       className={cn(
         sectionSpacing,
-        bordered && "border-t border-zinc-900",
-        muted && "bg-zinc-950/40",
+        bordered && "border-t border-brand-border",
+        muted && "bg-brand-soft/60",
         className,
       )}
       id={id}
@@ -69,7 +74,13 @@ export function SectionHeader({
       variants={fadeUp}
       transition={transition}
     >
-      <p className={labelMuted ? "font-mono text-xs uppercase tracking-widest text-zinc-500" : sectionLabel}>
+      <p
+        className={
+          labelMuted
+            ? "font-sans text-xs font-semibold uppercase tracking-widest text-brand-muted"
+            : sectionLabel
+        }
+      >
         {label}
       </p>
       <h2 className={cn("mt-4", sectionTitle)}>{title}</h2>

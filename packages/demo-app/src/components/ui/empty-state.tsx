@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
-import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 type EmptyStateProps = {
   title?: string;
-  description: ReactNode;
+  description: string;
   icon?: ReactNode;
   loading?: boolean;
   className?: string;
@@ -13,21 +12,17 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description, icon, loading, className }: EmptyStateProps) {
   return (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center px-4 py-8 text-center text-zinc-500",
-        className,
-      )}
-      role={loading ? "status" : undefined}
-      aria-live={loading ? "polite" : undefined}
-    >
+    <div className={cn("flex flex-col items-center justify-center px-6 py-12 text-center", className)}>
       {loading ? (
-        <Loader2 className="mb-3 h-5 w-5 animate-spin text-emerald-400" aria-hidden />
+        <div
+          aria-hidden
+          className="mb-3 h-5 w-5 animate-spin rounded-full border-2 border-[#EAEAEC] border-t-[#111111]"
+        />
       ) : icon ? (
-        <div className="mb-3 text-zinc-600">{icon}</div>
+        <div className="mb-3 text-[#9CA3AF]">{icon}</div>
       ) : null}
-      {title ? <p className="text-sm font-medium text-zinc-400">{title}</p> : null}
-      <p className={cn("text-sm", title && "mt-1")}>{description}</p>
+      {title ? <p className="text-sm font-medium text-[#111111]">{title}</p> : null}
+      <p className={cn("text-sm italic text-[#9CA3AF]", title && "mt-1")}>{description}</p>
     </div>
   );
 }

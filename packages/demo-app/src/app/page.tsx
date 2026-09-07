@@ -1,7 +1,7 @@
 import { AppNav } from "@/components/AppNav";
+import { About } from "@/components/About";
 import { CTA } from "@/components/CTA";
 import { Features } from "@/components/Features";
-import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageShell } from "@/components/PageShell";
@@ -19,13 +19,13 @@ export default function LandingPage() {
         <Hero />
         <TrustedBy />
         <Features />
+        <About />
         <HowItWorks />
         <WhyTrustMesh />
         <SecurityCryptography />
         <UseCases />
         <CTA />
       </main>
-      <Footer />
     </PageShell>
   );
 }

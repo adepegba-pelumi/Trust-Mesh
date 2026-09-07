@@ -25,8 +25,8 @@ export function StatCard({ value, label, index = 0, className }: StatCardProps) 
       variants={fadeUp}
       transition={{ ...transition, delay: index * 0.08 }}
     >
-      <p className="font-mono text-3xl font-semibold text-emerald-400">{value}</p>
-      <p className="mt-2 text-xs leading-snug text-zinc-500">{label}</p>
+      <p className="font-display text-3xl font-semibold text-brand-accent">{value}</p>
+      <p className="mt-2 text-xs leading-snug text-brand-muted">{label}</p>
     </motion.div>
   );
 }

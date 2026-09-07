@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { MeshBackground } from "@/components/illustrations/MeshBackground";
+import { Footer } from "@/components/Footer";
 import { cn } from "@/lib/utils";
 
 /** Re-export design tokens for backward compatibility */
@@ -20,12 +20,12 @@ type PageShellProps = {
   className?: string;
 };
 
-/** Ambient zinc/emerald background shared across all pages. */
+/** Clean white canvas with site footer on every page. */
 export function PageShell({ children, className }: PageShellProps) {
   return (
-    <div className={cn("relative min-h-screen overflow-hidden bg-zinc-950 text-zinc-100", className)}>
-      <MeshBackground />
-      <div className="relative">{children}</div>
+    <div className={cn("relative flex min-h-screen flex-col bg-white text-[#111111]", className)}>
+      <div className="relative flex-1">{children}</div>
+      <Footer />
     </div>
   );
 }

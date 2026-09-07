@@ -1,45 +1,46 @@
-/** Shared Tailwind class tokens — single source of truth for the design system. */
+/** Shared Tailwind class tokens — dashboard monochrome + landing-compatible. */
 
 export const sectionLabel =
-  "font-mono text-xs uppercase tracking-widest text-emerald-500";
+  "font-sans text-xs font-semibold uppercase tracking-widest text-[#22C55E]";
 
 export const sectionLabelMuted =
-  "font-mono text-xs uppercase tracking-widest text-zinc-500";
+  "font-sans text-xs font-semibold uppercase tracking-widest text-[#6E6E76]";
 
 export const pageTitle =
-  "text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl";
+  "text-3xl font-bold tracking-tight text-[#111111] sm:text-4xl";
 
-export const pageSubtitle = "mt-2 text-sm leading-relaxed text-zinc-400";
+export const pageSubtitle = "mt-2 text-sm leading-relaxed text-[#6E6E76]";
 
 export const sectionTitle =
-  "text-balance text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl";
+  "text-balance text-3xl font-semibold tracking-tight text-[#111111] sm:text-4xl";
 
 export const sectionDescription =
-  "mx-auto mt-4 max-w-2xl text-balance text-zinc-400";
+  "mx-auto mt-4 max-w-2xl text-balance text-[#6E6E76] leading-relaxed";
 
 export const surfaceCard =
-  "rounded-2xl border border-zinc-800/80 bg-zinc-900/30 backdrop-blur";
+  "rounded-xl border border-[#EAEAEC] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]";
 
 export const surfaceCardHover =
-  "transition-colors hover:border-emerald-500/30 hover:bg-zinc-900/60";
+  "transition-colors duration-150 hover:border-[#111111]/15";
 
 export const glassPanel =
-  "rounded-2xl border border-zinc-800/70 bg-zinc-950/60 backdrop-blur";
+  "rounded-xl border border-[#EAEAEC] bg-white";
 
 export const linkAccent =
-  "font-mono text-xs text-emerald-400 transition-colors hover:text-emerald-300 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
+  "text-sm text-[#111111] underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111]/20 focus-visible:ring-offset-2";
 
 export const statBox =
-  "rounded-xl border border-zinc-800 bg-zinc-950/60 p-4";
+  "border-t border-[#EAEAEC] pt-4 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4 first:border-l-0 first:pl-0 first:border-t-0 first:pt-0";
 
 export const fieldLabel =
-  "text-xs font-medium uppercase tracking-wide text-zinc-500";
+  "text-xs font-medium uppercase tracking-wide text-[#6E6E76]";
 
 export const pageContainer = "mx-auto max-w-6xl px-4 sm:px-6";
 
-export const pageMain = "mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 sm:py-12";
+export const pageMain =
+  "mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 sm:py-12";
 
 export const sectionSpacing = "py-20 sm:py-28";
 
 export const iconBox =
-  "flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-400";
+  "flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAFBF1] text-[#22C55E]";

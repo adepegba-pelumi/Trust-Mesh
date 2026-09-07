@@ -7,6 +7,7 @@ const config: Config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/lib/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -44,9 +45,24 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        brand: {
+          cream: "rgb(250 250 247 / <alpha-value>)",
+          soft: "rgb(253 252 249 / <alpha-value>)",
+          charcoal: "rgb(42 42 40 / <alpha-value>)",
+          muted: "rgb(107 107 102 / <alpha-value>)",
+          accent: "rgb(47 174 110 / <alpha-value>)",
+          mint: "rgb(232 245 238 / <alpha-value>)",
+          border: "rgb(237 235 228 / <alpha-value>)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        soft: "0 4px 20px rgba(0,0,0,0.04)",
+        "soft-lg": "0 8px 32px rgba(0,0,0,0.06)",
+        mint: "0 8px 40px rgba(47,174,110,0.12)",
       },
       borderRadius: {
         lg: "var(--radius)",

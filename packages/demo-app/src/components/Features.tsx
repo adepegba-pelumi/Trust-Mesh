@@ -1,8 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { Eye, GaugeCircle, Lock, Radar, Repeat, Workflow } from "lucide-react";
 
-import { DashboardMockIllustration } from "@/components/illustrations/DashboardMockIllustration";
 import { FeatureCard } from "@/components/ui/feature-card";
 import { MotionReveal } from "@/components/ui/motion";
 import { Section, SectionHeader } from "@/components/ui/section";
@@ -49,9 +49,18 @@ const features = [
 
 export function Features() {
   return (
-    <Section id="features" className="relative">
-      <div aria-hidden className="pointer-events-none absolute right-0 top-1/2 hidden w-72 -translate-y-1/2 opacity-20 lg:block">
-        <DashboardMockIllustration className="h-auto w-full" />
+    <Section id="features" className="relative bg-white">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-0 top-1/2 hidden w-80 -translate-y-1/2 opacity-40 lg:block"
+      >
+        <Image
+          alt=""
+          className="h-auto w-full object-contain"
+          height={480}
+          src="/images/agent-ecosystem.png"
+          width={640}
+        />
       </div>
 
       <SectionHeader

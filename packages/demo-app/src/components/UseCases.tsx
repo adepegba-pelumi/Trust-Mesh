@@ -1,8 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 
-import { BlockchainMeshIllustration } from "@/components/illustrations/BlockchainMeshIllustration";
 import { FeatureCard } from "@/components/ui/feature-card";
 import { MotionReveal } from "@/components/ui/motion";
 import { Section, SectionHeader } from "@/components/ui/section";
@@ -32,9 +32,18 @@ const cases = [
 
 export function UseCases() {
   return (
-    <Section className="relative" id="use-cases">
-      <div aria-hidden className="pointer-events-none absolute bottom-0 left-0 hidden w-80 opacity-15 lg:block">
-        <BlockchainMeshIllustration className="h-auto w-full" />
+    <Section className="relative bg-[#F7F7F7]" id="use-cases">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 left-0 hidden w-96 opacity-35 lg:block"
+      >
+        <Image
+          alt=""
+          className="h-auto w-full object-contain"
+          height={520}
+          src="/images/agent-ecosystem.png"
+          width={720}
+        />
       </div>
 
       <SectionHeader label="use cases" title="Built for agents that hold real capital." />
@@ -47,7 +56,7 @@ export function UseCases() {
               footer={
                 <ArrowUpRight
                   aria-hidden
-                  className="mt-6 h-4 w-4 text-zinc-600 transition-colors group-hover:text-emerald-400"
+                  className="mt-6 h-4 w-4 text-brand-accent transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                 />
               }
               tag={c.tag}

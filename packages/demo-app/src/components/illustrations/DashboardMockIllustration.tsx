@@ -17,21 +17,19 @@ export function DashboardMockIllustration({ className }: DashboardMockIllustrati
       viewBox="0 0 480 300"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Main panel */}
-      <rect fill="#09090b" height="220" rx="16" stroke="#27272a" strokeWidth="1" width="380" x="50" y="40" />
-      <rect fill="#18181b" height="28" rx="8" width="380" x="50" y="40" />
-      <circle cx="70" cy="54" fill="#3f3f46" r="4" />
-      <circle cx="84" cy="54" fill="#3f3f46" r="4" />
-      <circle cx="98" cy="54" fill="#34d399" fillOpacity="0.5" r="4" />
+      <rect fill="#FFFFFF" height="220" rx="16" stroke="#EDEBE4" strokeWidth="1.5" width="380" x="50" y="40" />
+      <rect fill="#FDFCF9" height="28" rx="12" width="380" x="50" y="40" />
+      <circle cx="70" cy="54" fill="#F5C6C6" r="4" />
+      <circle cx="84" cy="54" fill="#F5E0B0" r="4" />
+      <circle cx="98" cy="54" fill="#B8E0C8" r="4" />
 
-      {/* Stat cards */}
       {[0, 1, 2].map((i) => (
         <rect
           key={i}
-          fill="#18181b"
+          fill="#E8F5EE"
           height="48"
-          rx="8"
-          stroke="#27272a"
+          rx="10"
+          stroke="#EDEBE4"
           strokeWidth="1"
           width="100"
           x={70 + i * 115}
@@ -39,51 +37,55 @@ export function DashboardMockIllustration({ className }: DashboardMockIllustrati
         />
       ))}
 
-      {/* Pipeline stages */}
       {[0, 1, 2, 3, 4].map((i) => (
         <rect
           key={i}
-          fill={i === 2 ? "#10b981" : "#18181b"}
-          fillOpacity={i === 2 ? 0.15 : 1}
+          fill={i === 2 ? "#E8F5EE" : "#FDFCF9"}
           height="36"
-          rx="6"
-          stroke={i === 2 ? "#34d399" : "#27272a"}
-          strokeOpacity={i === 2 ? 0.5 : 1}
-          strokeWidth="1"
+          rx="8"
+          stroke={i === 2 ? "#2FAE6E" : "#EDEBE4"}
+          strokeOpacity={i === 2 ? 0.55 : 1}
+          strokeWidth="1.25"
           width="58"
           x={70 + i * 68}
           y="150"
         />
       ))}
 
-      {/* Audit table rows */}
       {[0, 1, 2].map((i) => (
-        <rect
-          key={i}
-          fill="#18181b"
-          height="20"
-          rx="4"
-          width="340"
-          x="70"
-          y={205 + i * 26}
-        />
+        <rect key={i} fill="#F7F6F1" height="20" rx="6" width="340" x="70" y={205 + i * 26} />
       ))}
 
-      {/* Floating card */}
       <motion.g
         animate={reduce ? undefined : { y: [0, -6, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       >
-        <rect fill="#18181b" height="72" rx="10" stroke="#34d399" strokeOpacity="0.35" strokeWidth="1" width="120" x="340" y="180" />
-        <text fill="#34d399" fontFamily="monospace" fontSize="9" x="355" y="205">
+        <rect
+          fill="#FFFFFF"
+          height="72"
+          rx="12"
+          stroke="#2FAE6E"
+          strokeOpacity="0.35"
+          strokeWidth="1.5"
+          width="120"
+          x="340"
+          y="180"
+        />
+        <text fill="#2FAE6E" fontFamily="var(--font-sans), system-ui, sans-serif" fontSize="9" x="355" y="205">
           verified ✓
         </text>
-        <text fill="#71717a" fontFamily="monospace" fontSize="8" x="355" y="225">
+        <text fill="#6B6B66" fontFamily="var(--font-sans), system-ui, sans-serif" fontSize="8" x="355" y="225">
           block #8.2M
         </text>
       </motion.g>
 
-      <text fill="#71717a" fontFamily="monospace" fontSize="10" x="50" y="285">
+      <text
+        fill="#6B6B66"
+        fontFamily="var(--font-sans), system-ui, sans-serif"
+        fontSize="10"
+        x="50"
+        y="285"
+      >
         live demo dashboard
       </text>
     </svg>
